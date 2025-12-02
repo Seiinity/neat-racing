@@ -36,7 +36,7 @@ class Genome:
         Applies mutations to weights, activations, and/or topology.
     """
 
-    def __init__(self, input_size: int, output_size: int, topology: list[int], activations: list[ActivationFunction], weights: NDArray[float]):
+    def __init__(self, input_size: int, output_size: int, topology: list[int], activations: list[ActivationFunction], weights: NDArray[float]) -> None:
 
         self.input_size = input_size
         self.output_size = output_size
@@ -209,7 +209,7 @@ class Genome:
 
         return result
 
-    def mutate(self):
+    def mutate(self) -> None:
 
         """
         Mutates the genome.
