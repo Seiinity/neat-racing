@@ -36,7 +36,7 @@ class Genome:
         Applies mutations to weights, activations, and/or topology.
     """
 
-    rng: Generator = np.random.default_rng()
+    rng: Generator = np.random.default_rng(seed=cfg.RANDOM_SEED)
 
     def __init__(self, input_size: int, output_size: int, topology: list[int], activations: list[ActivationFunction], weights: NDArray[float]):
 
