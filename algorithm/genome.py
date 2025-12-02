@@ -28,7 +28,7 @@ class Genome:
 
     Methods
     -------
-    random(input_size, output_size) -> Genome
+    random(input_size, output_size) -> Genome (static)
         Creates a genome with a random topology, activation functions, and weights.
     get_layer_weights() -> list[tuple[NDArray[float], NDArray[float]]]
         Returns the weights and biases of each layer of the genome.
@@ -50,14 +50,6 @@ class Genome:
         """
         Creates a genome with a random topology, activation functions, and weights.
 
-        Notes
-        -----
-        The number of hidden layers is derived from ``GENOME_MIN_LAYERS``
-        and ``GENOME_MAX_LAYERS``.The number of neurons in each hidden layer is
-        derived from ``GENOME_MIN_NEURONS`` and ``GENOME_MAX_NEURONS``.
-
-        The output layer's activation function is always softmax.
-
         Parameters
         ----------
         input_size : int
@@ -69,6 +61,14 @@ class Genome:
         -------
         Genome
             The randomly generated genome.
+
+        Notes
+        -----
+        The number of hidden layers is derived from ``GENOME_MIN_LAYERS``
+        and ``GENOME_MAX_LAYERS``.The number of neurons in each hidden layer is
+        derived from ``GENOME_MIN_NEURONS`` and ``GENOME_MAX_NEURONS``.
+
+        The output layer's activation function is always softmax.
 
         """
 
@@ -105,10 +105,6 @@ class Genome:
         Randomly selects an activation function from ReLU, Sigmoid, and Tanh
         for each hidden layer of the genome.
 
-        Notes
-        -----
-        A Softmax activation is always appended at the end for the output layer.
-
         Parameters
         ----------
         num_layers: int
@@ -118,6 +114,10 @@ class Genome:
         -------
         list[ActivationFunction]
             A list of randomly chosen activation function instances.
+
+        Notes
+        -----
+        A Softmax activation is always appended at the end for the output layer.
         """
 
         # Creates a random activation function for each layer and adds a softmax function for the output layer.
@@ -130,10 +130,6 @@ class Genome:
 
         """
         Creates a normal distribution of random weights for each layer of the genome.
-
-        Notes
-        -----
-        The standard deviation of the normal distribution is controlled with ``GENOME_WEIGHTS_STD``.
 
         Parameters
         ----------
@@ -148,6 +144,10 @@ class Genome:
         -------
         NDArray[float]
             An array containing all weights and biases for the neural network.
+
+        Notes
+        -----
+        The standard deviation of the normal distribution is controlled with ``GENOME_WEIGHTS_STD``.
         """
 
         # This will store the total size of weights and biases.
@@ -233,6 +233,7 @@ class Genome:
         Notes
         -----
         A boolean mask is created to decide which weights to mutate based on ``MUTATION_CHANCE_WEIGHT``.
+
         A noise factor within ``[-MUTATION_NOISE_LIMIT, MUTATION_NOISE_LIMIT]`` is applied to the selected weights.
         """
 
@@ -253,6 +254,7 @@ class Genome:
         Notes
         -----
         This loops through all activation functions except the output layer's (which should stay as Softmax).
+
         It chooses random activations to mutate based on ``MUTATION_CHANCE_ACTIVATION``.
         """
 
@@ -271,6 +273,7 @@ class Genome:
         Notes
         -----
         A mutation only occurs based on ``MUTATION_CHANCE_TOPOLOGY``.
+
         A random mutation is chosen between adding a layer, removing a layer, and resizing a layer.
         """
 
@@ -302,6 +305,7 @@ class Genome:
         Notes
         -----
         The size of the hidden layer is bound to ``[GENOME_MIN_NEURONS, GENOME_MAX_NEURONS]``.
+
         If the number of layers is already equal to ``GENOME_MAX_LAYERS``, a new layer is
         not added.
         """
@@ -358,6 +362,7 @@ class Genome:
         Notes
         -----
         The size of the hidden layer is always bound to ``[GENOME_MIN_NEURONS, GENOME_MAX_NEURONS]``.
+
         The change in size is within ``[-MUTATION_RESIZE_LIMIT, MUTATION_RESIZE_LIMIT]`` .
         """
 
@@ -390,6 +395,7 @@ class Genome:
         weights: NDArray[float] = self.weights.copy()
 
         return Genome(self.input_size, self.output_size, topology, activations, weights)
+
 
 class TopologyMutation(Enum):
 

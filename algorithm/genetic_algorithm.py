@@ -63,15 +63,15 @@ class GeneticAlgorithm:
         """
         Creates the next generation of genomes.
 
-        Notes
-        -----
-        The top ``ELITISM_CUTOFF`` genomes are directly copied to the new generation.
-        The remaining genomes have a chance to be mutated.
-
         Parameters
         ----------
         fitness_func : Callable[[Genome], float]
             The fitness function used to evaluate the population.
+
+        Notes
+        -----
+        The top ``ELITISM_CUTOFF`` genomes are directly copied to the new generation.
+        The remaining genomes have a chance to be mutated.
 
         """
 
@@ -95,14 +95,14 @@ class GeneticAlgorithm:
         """
         Evaluates the fitness of the population based on a fitness function.
 
-        Notes
-        -----
-        After evaluation, a fitness score is attributed to each genome.
-
         Parameters
         ----------
         fitness_func : Callable[[Genome], float]
             The fitness function used to evaluate the population.
+
+        Notes
+        -----
+        After evaluation, a fitness score is attributed to each genome.
 
         """
 
@@ -113,16 +113,16 @@ class GeneticAlgorithm:
         """
         Picks the best genomes out of the population.
 
+        Returns
+        -------
+        list[Genome]
+            A list of all surviving genomes.
+
         Notes
         -----
         The top ``ELITISM_CUTOFF`` genomes are picked directly.
         The remaining genomes go through tournament selection. This selection allows
         for duplicate genomes, which is desirable for natural selection.
-
-        Returns
-        -------
-        list[Genome]
-            A list of all surviving genomes.
         """
 
         # Sorts the population by fitness (descending) and keeps the best ones.
