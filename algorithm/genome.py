@@ -1,9 +1,8 @@
 ﻿from __future__ import annotations
 
-import numpy as np
 import algorithm.config as cfg
 
-from numpy.random import Generator
+from rng import rng
 from numpy.typing import NDArray
 from algorithm.activation_function import ActivationFunction, ReLU, Sigmoid, Tanh, Softmax
 from enum import Enum
@@ -35,8 +34,6 @@ class Genome:
     mutate()
         Applies mutations to weights, activations, and/or topology.
     """
-
-    rng: Generator = np.random.default_rng(seed=cfg.RANDOM_SEED)
 
     def __init__(self, input_size: int, output_size: int, topology: list[int], activations: list[ActivationFunction], weights: NDArray[float]):
 
@@ -74,8 +71,8 @@ class Genome:
 
         """
 
-        num_hidden_layers: int = int(Genome.rng.integers(cfg.GENOME_MIN_LAYERS, cfg.GENOME_MAX_LAYERS, endpoint=True))
-        topology: list[int] = Genome.rng.integers(cfg.GENOME_MIN_NEURONS, cfg.GENOME_MAX_NEURONS, endpoint=True, size=num_hidden_layers).tolist()
+        num_hidden_layers: int = int(rng.integers(cfg.GENOME_MIN_LAYERS, cfg.GENOME_MAX_LAYERS, endpoint=True))
+        topology: list[int] = rng.integers(cfg.GENOME_MIN_NEURONS, cfg.GENOME_MAX_NEURONS, endpoint=True, size=num_hidden_layers).tolist()
 
         activations: list[ActivationFunction] = Genome._random_activations(num_hidden_layers)
         weights: NDArray[float] = Genome._random_weights(input_size, topology, output_size)
@@ -95,7 +92,7 @@ class Genome:
         """
 
         possible_activations: list[type[ActivationFunction]] = [ReLU, Sigmoid, Tanh]
-        return Genome.rng.choice(possible_activations)()
+        return rng.choice(possible_activations)()
 
     @staticmethod
     def _random_activations(num_layers: int) -> list[ActivationFunction]:
@@ -154,7 +151,7 @@ class Genome:
         for i in range(len(sizes) - 1):
             total_size += sizes[i + 1] * sizes[i] + sizes[i + 1]
 
-        return Genome.rng.standard_normal(total_size) * cfg.GENOME_WEIGHTS_STD
+        return rng.standard_normal(total_size) * cfg.GENOME_WEIGHTS_STD
 
     def get_layer_weights(self) -> list[tuple[NDArray[float], NDArray[float]]]:
 
@@ -214,8 +211,8 @@ class Genome:
         A noise factor within ``[-MUTATION_NOISE_LIMIT, MUTATION_NOISE_LIMIT]`` is applied to the selected weights.
         """
 
-        weights_mask: NDArray[bool] = Genome.rng.uniform(size=self.weights.shape) < cfg.MUTATION_CHANCE_WEIGHT
-        noise: NDArray[float] = Genome.rng.uniform(-cfg.MUTATION_NOISE_LIMIT, cfg.MUTATION_NOISE_LIMIT, size=self.weights.shape)
+        weights_mask: NDArray[bool] = rng.uniform(size=self.weights.shape) < cfg.MUTATION_CHANCE_WEIGHT
+        noise: NDArray[float] = rng.uniform(-cfg.MUTATION_NOISE_LIMIT, cfg.MUTATION_NOISE_LIMIT, size=self.weights.shape)
         self.weights[weights_mask] += noise[weights_mask]
 
     def _mutate_activations(self) -> None:
@@ -231,7 +228,7 @@ class Genome:
 
         for i in range(len(self.activations) - 1):
 
-            if Genome.rng.uniform() < cfg.MUTATION_CHANCE_ACTIVATION:
+            if rng.uniform() < cfg.MUTATION_CHANCE_ACTIVATION:
                 self.activations[i] = Genome._random_activation()
 
     def _mutate_topology(self) -> None:
@@ -245,10 +242,10 @@ class Genome:
         A random mutation is chosen between adding a layer, removing a layer, and resizing a layer.
         """
 
-        if Genome.rng.uniform() >= cfg.MUTATION_CHANCE_TOPOLOGY:
+        if rng.uniform() >= cfg.MUTATION_CHANCE_TOPOLOGY:
             return
 
-        mutation: TopologyMutation = Genome.rng.choice(list(TopologyMutation))
+        mutation: TopologyMutation = rng.choice(list(TopologyMutation))
 
         match mutation:
 
@@ -261,17 +258,19 @@ class Genome:
 
         return
 
-    def _add_layer(self):
+    def _add_layer(self) -> None:
 
-        return
+        self.weights = Genome._random_weights(self.input_size, self.topology, self.output_size)
 
-    def _remove_layer(self):
+    def _remove_layer(self) -> None:
 
-        return
+        self.weights = Genome._random_weights(self.input_size, self.topology, self.output_size)
 
-    def _resize_layer(self):
+    def _resize_layer(self) -> None:
 
-        return
+        index = rng.integers(0, len(self.topology))
+
+        self.weights = Genome._random_weights(self.input_size, self.topology, self.output_size)
 
 class TopologyMutation(Enum):
 
