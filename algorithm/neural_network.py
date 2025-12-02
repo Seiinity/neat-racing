@@ -1,7 +1,7 @@
 ﻿from __future__ import annotations
 
 from numpy.typing import NDArray
-from activation_function import ActivationFunction
+from algorithm.activation_function import ActivationFunction
 from algorithm.genome import Genome
 
 class NeuralNetwork:
