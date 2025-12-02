@@ -1,12 +1,12 @@
 ﻿from __future__ import annotations
 
-import algorithm.config as cfg
 import numpy as np
 
+from enum import Enum
 from rng import rng
+from algorithm.config import GENOME, MUTATION
 from numpy.typing import NDArray
 from algorithm.activation_function import ActivationFunction, ReLU, Sigmoid, Tanh, Softmax
-from enum import Enum
 
 class Genome:
 
@@ -73,8 +73,8 @@ class Genome:
         """
 
         # Computes the topology (number and sizes of hidden layers).
-        num_hidden_layers: int = int(rng.integers(cfg.GENOME_MIN_LAYERS, cfg.GENOME_MAX_LAYERS, endpoint=True))
-        topology: list[int] = rng.integers(cfg.GENOME_MIN_NEURONS, cfg.GENOME_MAX_NEURONS, endpoint=True, size=num_hidden_layers).tolist()
+        num_hidden_layers: int = int(rng.integers(GENOME.MIN_LAYERS, GENOME.MAX_LAYERS, endpoint=True))
+        topology: list[int] = rng.integers(GENOME.MIN_NEURONS, GENOME.MAX_NEURONS, endpoint=True, size=num_hidden_layers).tolist()
 
         # Computes random activation functions and weights/biases for each layer.
         activations: list[ActivationFunction] = Genome._random_activations(num_hidden_layers)
@@ -164,7 +164,7 @@ class Genome:
             total_size += sizes[i + 1] * sizes[i] + sizes[i + 1]
 
         # Weights and biases have a random normal distribution.
-        return rng.standard_normal(total_size) * cfg.GENOME_WEIGHTS_STD
+        return rng.standard_normal(total_size) * GENOME.WEIGHTS_STD
 
     def get_layer_weights(self) -> list[tuple[NDArray[float], NDArray[float]]]:
 
@@ -237,10 +237,10 @@ class Genome:
         """
 
         # Creates a mask that dictates which weights to change.
-        weights_mask: NDArray[bool] = rng.uniform(size=self.weights.shape) < cfg.MUTATION_CHANCE_WEIGHT
+        weights_mask: NDArray[bool] = rng.uniform(size=self.weights.shape) < MUTATION.CHANCE_WEIGHT
 
         # Creates an array with random noises (some might go unused depending on the mask).
-        noise: NDArray[float] = rng.uniform(-cfg.MUTATION_NOISE_LIMIT, cfg.MUTATION_NOISE_LIMIT, size=self.weights.shape)
+        noise: NDArray[float] = rng.uniform(-MUTATION.NOISE_LIMIT, MUTATION.NOISE_LIMIT, size=self.weights.shape)
 
         # Adds the noise to the selected weights.
         self.weights[weights_mask] += noise[weights_mask]
@@ -260,7 +260,7 @@ class Genome:
         for i in range(len(self.activations) - 1):
 
             # If it should be mutated, select a new, random activation function.
-            if rng.uniform() < cfg.MUTATION_CHANCE_ACTIVATION:
+            if rng.uniform() < MUTATION.CHANCE_ACTIVATION:
                 self.activations[i] = Genome._random_activation()
 
     def _mutate_topology(self) -> None:
@@ -275,7 +275,7 @@ class Genome:
         """
 
         # Checks whether to mutate the topology.
-        if rng.uniform() >= cfg.MUTATION_CHANCE_TOPOLOGY:
+        if rng.uniform() >= MUTATION.CHANCE_TOPOLOGY:
             return
 
         # Selects a random topology mutation.
@@ -307,14 +307,14 @@ class Genome:
         """
 
         # Checks whether a new layer can be added.
-        if len(self.topology) >= cfg.GENOME_MAX_LAYERS:
+        if len(self.topology) >= GENOME.MAX_LAYERS:
             return
 
         # Selects a random index (including the non-existent final index).
         index: int = int(rng.integers(0, len(self.topology), endpoint=True))
 
         # Selects the size for the new layer.
-        new_size: int = int(rng.integers(cfg.GENOME_MIN_NEURONS, cfg.GENOME_MAX_NEURONS, endpoint=True))
+        new_size: int = int(rng.integers(GENOME.MIN_NEURONS, GENOME.MAX_NEURONS, endpoint=True))
         self.topology.insert(index, new_size)
 
         # Selects the activation function for the new layer.
@@ -336,7 +336,7 @@ class Genome:
         """
 
         # Checks whether a layer can be removed.
-        if len(self.topology) <= cfg.GENOME_MIN_LAYERS:
+        if len(self.topology) <= GENOME.MIN_LAYERS:
             return
 
         # Selects a random index.
@@ -365,8 +365,8 @@ class Genome:
         index: int = int(rng.integers(0, len(self.topology)))
 
         # Creates a random size delta (difference) and applies it to the topology, keeping it within bounds.
-        size_delta: int = int(rng.integers(-cfg.MUTATION_RESIZE_LIMIT, cfg.MUTATION_RESIZE_LIMIT, endpoint=True))
-        self.topology[index] = np.clip(self.topology[index] + size_delta, cfg.GENOME_MIN_NEURONS, cfg.GENOME_MAX_NEURONS)
+        size_delta: int = int(rng.integers(-MUTATION.RESIZE_LIMIT, MUTATION.RESIZE_LIMIT, endpoint=True))
+        self.topology[index] = np.clip(self.topology[index] + size_delta, GENOME.MIN_NEURONS, GENOME.MAX_NEURONS)
 
         # Recomputes weights.
         self.weights = Genome._random_weights(self.input_size, self.topology, self.output_size)

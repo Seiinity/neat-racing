@@ -1,13 +1,43 @@
-﻿GENOME_MIN_LAYERS = 1
-GENOME_MAX_LAYERS = 4
-GENOME_MIN_NEURONS = 5
-GENOME_MAX_NEURONS = 10
-GENOME_WEIGHTS_STD = 0.1
+﻿from dataclasses import dataclass
 
-MUTATION_CHANCE_WEIGHT = 0.01
-MUTATION_CHANCE_TOPOLOGY = 0.01
-MUTATION_CHANCE_ACTIVATION = 0.02
-MUTATION_NOISE_LIMIT = 0.05
-MUTATION_RESIZE_LIMIT = 4
+@dataclass(frozen=True)
+class GenomeConfig:
 
-ELITISM_CUTOFF = 5
+    """
+    Contains genome-related configuration variables.
+    """
+
+    MIN_LAYERS: int = 1
+    MAX_LAYERS: int = 4
+    MIN_NEURONS: int = 5
+    MAX_NEURONS: int = 10
+    WEIGHTS_STD: float = 0.1
+
+
+@dataclass(frozen=True)
+class MutationConfig:
+
+    """
+    Contains mutation-related configuration variables.
+    """
+
+    CHANCE_WEIGHT: float = 0.01
+    CHANCE_TOPOLOGY: float = 0.01
+    CHANCE_ACTIVATION: float = 0.02
+    NOISE_LIMIT: float = 0.05
+    RESIZE_LIMIT: int = 4
+
+
+@dataclass(frozen=True)
+class GeneticConfig:
+
+    """
+    Contains the configuration variables for the genetic algorithm.
+    """
+
+    ELITISM_CUTOFF: int = 5
+
+
+GENOME = GenomeConfig()
+MUTATION = MutationConfig()
+GENETIC = GeneticConfig()

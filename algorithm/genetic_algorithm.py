@@ -1,6 +1,6 @@
 from collections.abc import Callable
 from algorithm.genome import Genome
-from algorithm.config import ELITISM_CUTOFF
+from algorithm.config import GENETIC
 from rng import rng
 
 class GeneticAlgorithm:
@@ -79,10 +79,10 @@ class GeneticAlgorithm:
         survivors: list[Genome] = self._select_survivors()
 
         # The elitism-chosen survivors get copied directly, the remaining ones have a chance to mutate.
-        new_population: list[tuple[Genome, float]] = [(genome.copy(), 0) for genome in survivors[:ELITISM_CUTOFF]]
+        new_population: list[tuple[Genome, float]] = [(genome.copy(), 0) for genome in survivors[:GENETIC.ELITISM_CUTOFF]]
 
         # The remaining ones have a chance to mutate.
-        for genome in survivors[ELITISM_CUTOFF:]:
+        for genome in survivors[GENETIC.ELITISM_CUTOFF:]:
             copy = genome.copy()
             copy.mutate()
             new_population.append((copy, 0))
@@ -127,11 +127,11 @@ class GeneticAlgorithm:
 
         # Sorts the population by fitness (descending) and keeps the best ones.
         self.population.sort(key=lambda x: x[1], reverse=True)
-        survivors: list[Genome] = [genome for genome, _ in self.population[:ELITISM_CUTOFF]]
-        remaining_genomes: list[tuple[Genome, float]] = self.population[ELITISM_CUTOFF:]
+        survivors: list[Genome] = [genome for genome, _ in self.population[:GENETIC.ELITISM_CUTOFF]]
+        remaining_genomes: list[tuple[Genome, float]] = self.population[GENETIC.ELITISM_CUTOFF:]
 
         # Runs tournaments on the remaining genomes.
-        for _ in range(self.population_size - ELITISM_CUTOFF):
+        for _ in range(self.population_size - GENETIC.ELITISM_CUTOFF):
             survivors.append(GeneticAlgorithm._run_tournament(remaining_genomes))
 
         return survivors
