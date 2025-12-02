@@ -69,7 +69,6 @@ class Genome:
         derived from ``GENOME_MIN_NEURONS`` and ``GENOME_MAX_NEURONS``.
 
         The output layer's activation function is always softmax.
-
         """
 
         # Computes the topology (number and sizes of hidden layers).
