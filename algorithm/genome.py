@@ -1,6 +1,7 @@
 ﻿from __future__ import annotations
 
 import algorithm.config as cfg
+import numpy as np
 
 from rng import rng
 from numpy.typing import NDArray
@@ -51,9 +52,9 @@ class Genome:
 
         Notes
         -----
-        The number of hidden layers is derived from `GENOME_MIN_LAYERS`
-        and `GENOME_MAX_LAYERS`.The number of neurons in each hidden layer is
-        derived from `GENOME_MIN_NEURONS` and `GENOME_MAX_NEURONS`.
+        The number of hidden layers is derived from ``GENOME_MIN_LAYERS``
+        and ``GENOME_MAX_LAYERS``.The number of neurons in each hidden layer is
+        derived from ``GENOME_MIN_NEURONS`` and ``GENOME_MAX_NEURONS``.
 
         The output layer's activation function is always softmax.
 
@@ -71,9 +72,11 @@ class Genome:
 
         """
 
+        # Computes the topology (number and sizes of hidden layers).
         num_hidden_layers: int = int(rng.integers(cfg.GENOME_MIN_LAYERS, cfg.GENOME_MAX_LAYERS, endpoint=True))
         topology: list[int] = rng.integers(cfg.GENOME_MIN_NEURONS, cfg.GENOME_MAX_NEURONS, endpoint=True, size=num_hidden_layers).tolist()
 
+        # Computes random activation functions and weights/biases for each layer.
         activations: list[ActivationFunction] = Genome._random_activations(num_hidden_layers)
         weights: NDArray[float] = Genome._random_weights(input_size, topology, output_size)
 
@@ -91,6 +94,7 @@ class Genome:
             An instance of the randomly chosen activation function class.
         """
 
+        # Selects a random activation function.
         possible_activations: list[type[ActivationFunction]] = [ReLU, Sigmoid, Tanh]
         return rng.choice(possible_activations)()
 
@@ -116,6 +120,7 @@ class Genome:
             A list of randomly chosen activation function instances.
         """
 
+        # Creates a random activation function for each layer and adds a softmax function for the output layer.
         activations: list[ActivationFunction] = [Genome._random_activation() for _ in range(num_layers)]
         activations.append(Softmax())
         return activations
@@ -128,7 +133,7 @@ class Genome:
 
         Notes
         -----
-        The standard deviation of the normal distribution is controlled with `GENOME_WEIGHTS_STD`.
+        The standard deviation of the normal distribution is controlled with ``GENOME_WEIGHTS_STD``.
 
         Parameters
         ----------
@@ -145,12 +150,20 @@ class Genome:
             An array containing all weights and biases for the neural network.
         """
 
+        # This will store the total size of weights and biases.
         total_size: int = 0
+
+        # Computes a list of sizes (input + hidden layers + output).
         sizes: list[int] = [input_size] + topology + [output_size]
 
         for i in range(len(sizes) - 1):
+
+            # The total size is the sum of two components:
+            # (Size of next layer * size of current layer), to store weights.
+            # Size of the next layer, to store biases.
             total_size += sizes[i + 1] * sizes[i] + sizes[i + 1]
 
+        # Weights and biases have a random normal distribution.
         return rng.standard_normal(total_size) * cfg.GENOME_WEIGHTS_STD
 
     def get_layer_weights(self) -> list[tuple[NDArray[float], NDArray[float]]]:
@@ -164,22 +177,34 @@ class Genome:
             A list of tuples containing the weights and biases for each layer.
         """
 
+        # Initialises the results list and offset.
         result: list[tuple[NDArray[float], NDArray[float]]] = []
-        sizes: list[int] = [self.input_size] + self.topology + [self.output_size]
         offset: int = 0
 
+        # Computes a list of sizes (input + hidden layers + output).
+        sizes: list[int] = [self.input_size] + self.topology + [self.output_size]
+
+        # For each layer...
         for i in range(len(sizes) - 1):
 
+            # The shape of the weights is (size of next layer, size of current layer).
+            # Each row represents one neuron in the next layer.
+            # Each neuron of the next layer needs the weights from ALL neurons of this layer.
             w_shape: tuple[int, int] = (sizes[i + 1], sizes[i])
+
+            # Calculates the amount of weights and biases.
             w_size: int = sizes[i + 1] * sizes[i]
             b_size: int = sizes[i + 1]
 
+            # Slices the data into a weight array and adds its size to the offset.
             W: NDArray[float] = self.weights[offset:offset + w_size].reshape(w_shape)
             offset += w_size
 
+            # Slices the data into a bias array and adds its size to the offset.
             b: NDArray[float] = self.weights[offset:offset + b_size]
             offset += b_size
 
+            # Appends a tuple of weights and biases of the current layer.
             result.append((W, b))
 
         return result
@@ -207,12 +232,17 @@ class Genome:
 
         Notes
         -----
-        A boolean mask is created to decide which weights to mutate based on `MUTATION_CHANCE_WEIGHT`.
+        A boolean mask is created to decide which weights to mutate based on ``MUTATION_CHANCE_WEIGHT``.
         A noise factor within ``[-MUTATION_NOISE_LIMIT, MUTATION_NOISE_LIMIT]`` is applied to the selected weights.
         """
 
+        # Creates a mask that dictates which weights to change.
         weights_mask: NDArray[bool] = rng.uniform(size=self.weights.shape) < cfg.MUTATION_CHANCE_WEIGHT
+
+        # Creates an array with random noises (some might go unused depending on the mask).
         noise: NDArray[float] = rng.uniform(-cfg.MUTATION_NOISE_LIMIT, cfg.MUTATION_NOISE_LIMIT, size=self.weights.shape)
+
+        # Adds the noise to the selected weights.
         self.weights[weights_mask] += noise[weights_mask]
 
     def _mutate_activations(self) -> None:
@@ -223,11 +253,13 @@ class Genome:
         Notes
         -----
         This loops through all activation functions except the output layer's (which should stay as Softmax).
-        It chooses random activations to mutate based on `MUTATION_CHANCE_ACTIVATION`.
+        It chooses random activations to mutate based on ``MUTATION_CHANCE_ACTIVATION``.
         """
 
+        # For each activation function (excluding the output's)...
         for i in range(len(self.activations) - 1):
 
+            # If it should be mutated, select a new, random activation function.
             if rng.uniform() < cfg.MUTATION_CHANCE_ACTIVATION:
                 self.activations[i] = Genome._random_activation()
 
@@ -238,13 +270,15 @@ class Genome:
 
         Notes
         -----
-        A mutation only occurs based on `MUTATION_CHANCE_TOPOLOGY`.
+        A mutation only occurs based on ``MUTATION_CHANCE_TOPOLOGY``.
         A random mutation is chosen between adding a layer, removing a layer, and resizing a layer.
         """
 
+        # Checks whether to mutate the topology.
         if rng.uniform() >= cfg.MUTATION_CHANCE_TOPOLOGY:
             return
 
+        # Selects a random topology mutation.
         mutation: TopologyMutation = rng.choice(list(TopologyMutation))
 
         match mutation:
@@ -260,17 +294,102 @@ class Genome:
 
     def _add_layer(self) -> None:
 
+        """
+        Adds a new layer to the genome at a random position.
+        The new layer has a random size and activation function.
+        All weights are recomputed afterward.
+
+        Notes
+        -----
+        The size of the hidden layer is bound to ``[GENOME_MIN_NEURONS, GENOME_MAX_NEURONS]``.
+        If the number of layers is already equal to ``GENOME_MAX_LAYERS``, a new layer is
+        not added.
+        """
+
+        # Checks whether a new layer can be added.
+        if len(self.topology) >= cfg.GENOME_MAX_LAYERS:
+            return
+
+        # Selects a random index (including the non-existent final index).
+        index: int = int(rng.integers(0, len(self.topology), endpoint=True))
+
+        # Selects the size for the new layer.
+        new_size: int = int(rng.integers(cfg.GENOME_MIN_NEURONS, cfg.GENOME_MAX_NEURONS, endpoint=True))
+        self.topology.insert(index, new_size)
+
+        # Selects the activation function for the new layer.
+        self.activations.insert(index, Genome._random_activation())
+
+        # Recomputes weights.
         self.weights = Genome._random_weights(self.input_size, self.topology, self.output_size)
 
     def _remove_layer(self) -> None:
 
+        """
+        Removes a randomly selected layer from the genome.
+        All weights are recomputed afterward.
+
+        Notes
+        -----
+        If the number of layers is already equal to ``GENOME_MIN_LAYERS``, no layer
+        is removed.
+        """
+
+        # Checks whether a layer can be removed.
+        if len(self.topology) <= cfg.GENOME_MIN_LAYERS:
+            return
+
+        # Selects a random index.
+        index: int = int(rng.integers(0, len(self.topology)))
+
+        # Removes the topology and activation function at that index.
+        self.topology.pop(index)
+        self.activations.pop(index)
+
+        # Recomputes weights.
         self.weights = Genome._random_weights(self.input_size, self.topology, self.output_size)
 
     def _resize_layer(self) -> None:
 
-        index = rng.integers(0, len(self.topology))
+        """
+        Resizes a randomly selected hidden layer.
+        All weights are recomputed afterward.
 
+        Notes
+        -----
+        The size of the hidden layer is always bound to ``[GENOME_MIN_NEURONS, GENOME_MAX_NEURONS]``.
+        The change in size is within ``[-MUTATION_RESIZE_LIMIT, MUTATION_RESIZE_LIMIT]`` .
+        """
+
+        # Selects a random topology's index.
+        index: int = int(rng.integers(0, len(self.topology)))
+
+        # Creates a random size delta (difference) and applies it to the topology, keeping it within bounds.
+        size_delta: int = int(rng.integers(-cfg.MUTATION_RESIZE_LIMIT, cfg.MUTATION_RESIZE_LIMIT, endpoint=True))
+        self.topology[index] = np.clip(self.topology[index] + size_delta, cfg.GENOME_MIN_NEURONS, cfg.GENOME_MAX_NEURONS)
+
+        # Recomputes weights.
         self.weights = Genome._random_weights(self.input_size, self.topology, self.output_size)
+
+    def copy(self) -> Genome:
+
+        """
+        Creates a copy of the genome.
+        Input and output sizes, topology, activation function, and weights
+        are copied.
+
+        Returns
+        -------
+        Genome
+            A copy of the genome.
+        """
+
+        # Creates a copy of the topology, activation functions, and weights.
+        topology: list[int] = self.topology.copy()
+        activations: list[ActivationFunction] = self.activations.copy() # Shallow copy is fine.
+        weights: NDArray[float] = self.weights.copy()
+
+        return Genome(self.input_size, self.output_size, topology, activations, weights)
 
 class TopologyMutation(Enum):
 
