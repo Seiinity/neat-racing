@@ -1,24 +1,19 @@
 from dataclasses import dataclass
-
 import pygame
 
 @dataclass(frozen=True)
-class CarConfig:
+class GameConfig:
 
     """
-    Contains car-related configuration variables.
+    Contains game-related configuration variables.
     """
 
-    SIZE: int = 30
-    ACCELERATION: float = 700
-    BRAKE_STRENGTH: float = 800
-    TURN_SPEED: float = 4
-    FRICTION: float = 0.98
+    SCREEN_WIDTH: int = 1280
+    SCREEN_HEIGHT: int = 720
 
-    SHAPE = {
-        'triangle': [(0.75, 0), (-0.5, -0.5), (-0.5, 0.5)],
-        'line': [(-2 / 3, -0.5), (-2 / 3, 0.5)]
-    }
+    FPS: int = 60
+    FIXED_DT: float = 1 / FPS
+
 
 @dataclass(frozen=True)
 class InputConfig:
@@ -32,16 +27,34 @@ class InputConfig:
     KEY_TURN_LEFT: int = pygame.K_a
     KEY_TURN_RIGHT: int = pygame.K_d
 
+
 @dataclass(frozen=True)
-class GameConfig:
+class CarConfig:
 
     """
-    Contains game-related configuration variables.
+    Contains car-related configuration variables.
     """
 
-    FPS = 60
-    FIXED_DT = 1 / FPS
+    SIZE: int = 20
+    ACCELERATION: float = 700
+    BRAKE_STRENGTH: float = 800
+    TURN_SPEED: float = 4
+    FRICTION: float = 0.98
 
-CAR = CarConfig()
-INPUT = InputConfig()
+    SHAPE = {
+        'triangle': [(0.75, 0), (-0.5, -0.5), (-0.5, 0.5)],
+        'line': [(-2 / 3, -0.5), (-2 / 3, 0.5)]
+    }
+
+
+@dataclass(frozen=True)
+class TrackConfig:
+
+    WIDTH: int = GameConfig.SCREEN_WIDTH
+    HEIGHT: int = GameConfig.SCREEN_HEIGHT
+
+
 GAME = GameConfig()
+INPUT = InputConfig()
+CAR = CarConfig()
+TRACK = TrackConfig()

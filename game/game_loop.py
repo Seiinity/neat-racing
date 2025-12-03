@@ -3,6 +3,7 @@ import pygame
 from pygame import Surface
 from pygame.time import Clock
 from game.car import Car
+from game.track import Track
 from game.input_handler import InputHandler
 from game.config import GAME
 
@@ -42,6 +43,9 @@ class GameLoop:
 
         # TODO: Instantiate multiple cars.
         self.cars: list[Car] = [Car()]
+
+        # TODO: Load different tracks.
+        self.track: Track = Track('./game/img/track_0.png')
 
     def run(self) -> None:
 
@@ -109,7 +113,7 @@ class GameLoop:
         Draws all the visible game elements on the screen.
         """
 
-        self.screen.fill("black")
+        self.track.draw(self.screen)
 
         for  car in self.cars:
             car.draw(self.screen)
