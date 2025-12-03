@@ -36,8 +36,8 @@ class CarConfig:
     """
 
     SIZE: int = 20
-    ACCELERATION: float = 700
-    BRAKE_STRENGTH: float = 800
+    ACCELERATION: float = 500
+    BRAKE_STRENGTH: float = 600
     TURN_SPEED: float = 4
     FRICTION: float = 0.98
 
@@ -50,8 +50,7 @@ class CarConfig:
 @dataclass(frozen=True)
 class TrackConfig:
 
-    WIDTH: int = GameConfig.SCREEN_WIDTH
-    HEIGHT: int = GameConfig.SCREEN_HEIGHT
+    CHECKPOINT_COLOUR: tuple[int, int, int] = (255, 255, 0)
 
 
 GAME = GameConfig()

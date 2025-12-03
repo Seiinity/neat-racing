@@ -116,7 +116,7 @@ class GameLoop:
 
         self.track.draw(self.screen)
 
-        for  car in self.cars:
+        for car in self.cars:
             car.draw(self.screen)
 
         pygame.display.flip()

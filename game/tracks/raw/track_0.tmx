@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="1280" height="720" tilewidth="1" tileheight="1" infinite="0" nextlayerid="6" nextobjectid="17">
+<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="1280" height="720" tilewidth="1" tileheight="1" infinite="0" nextlayerid="6" nextobjectid="19">
  <imagelayer id="4" name="bg">
   <image source="../img/track_0.png" width="1280" height="720"/>
  </imagelayer>
  <objectgroup id="3" name="objects">
   <object id="3" name="finish_line" x="499.182" y="583.318" width="4" height="97.6364"/>
-  <object id="4" name="checkpoint_6" type="checkpoint" x="163.333" y="574" width="113.333" height="2" rotation="150">
+  <object id="4" name="checkpoint_6" type="checkpoint" x="60.6663" y="628.667" width="113.333" height="2" rotation="-30">
    <properties>
     <property name="order" type="int" value="6"/>
    </properties>
@@ -15,7 +15,7 @@
     <property name="order" type="int" value="5"/>
    </properties>
   </object>
-  <object id="7" name="checkpoint_4" type="checkpoint" x="412.001" y="211" width="113.333" height="2" rotation="135">
+  <object id="7" name="checkpoint_4" type="checkpoint" x="302.668" y="279" width="113.333" height="2" rotation="-45">
    <properties>
     <property name="order" type="int" value="4"/>
    </properties>
@@ -25,12 +25,12 @@
     <property name="order" type="int" value="3"/>
    </properties>
   </object>
-  <object id="9" name="checkpoint_2" type="checkpoint" x="1014" y="172.333" width="113.333" height="2" rotation="-10">
+  <object id="9" name="checkpoint_2" type="checkpoint" x="1015.45" y="171.242" width="113.333" height="2" rotation="-10">
    <properties>
     <property name="order" type="int" value="2"/>
    </properties>
   </object>
-  <object id="10" name="checkpoint_1" type="checkpoint" x="1051.34" y="349.667" width="113.333" height="2" rotation="105">
+  <object id="10" name="checkpoint_1" type="checkpoint" x="1021.34" y="453.667" width="113.333" height="2" rotation="-75">
    <properties>
     <property name="order" type="int" value="1"/>
    </properties>

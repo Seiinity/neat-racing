@@ -1,10 +1,12 @@
 import pytmx
 import pygame
+import numpy as np
 
 from pygame.math import Vector2
 from pygame.rect import Rect
 from pygame.surface import Surface
 from pytmx import TiledImageLayer, TiledObjectGroup, TiledObject, TiledMap
+from game.config import TRACK
 
 class Track:
 
@@ -40,7 +42,6 @@ class Track:
 
         object_layer: TiledObjectGroup = self.tmx_data.layers[1]
         start_pos_obj: TiledObject = next(obj for obj in object_layer if obj.name == 'start_pos')
-        print(Vector2(start_pos_obj.x, start_pos_obj.y))
         return Vector2(start_pos_obj.x, start_pos_obj.y)
 
     def draw(self, screen: Surface) -> None:
@@ -55,21 +56,36 @@ class Checkpoint:
     def __init__(self, obj: TiledObject):
 
         self.order: int = obj.properties.get('order')
-        self.rect: Rect = Rect(obj.x, obj.y, obj.width, obj.height)
-        self.rotation: float = obj.rotation
         self.x: float = obj.x
         self.y: float = obj.y
-        self.width: float = obj.width
-        self.height: float = obj.height
 
-        self.surface_orig = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
-        self.surface_orig.fill((255, 255, 0, 128))  # Yellow, semi-transparent
+        self.surface: Surface | None = None
+        self.surface_rect: Rect | None = None
+        self.original_surface: Surface | None = None
+        self.rotation = 0
 
-    def draw(self, screen: Surface, color=(255, 255, 0)) -> None:
+        self._load_surface(obj)
 
-        surface = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
-        surface.fill((*color, 128))
+    def _load_surface(self, obj: TiledObject) -> None:
 
-        rotated_surface = pygame.transform.rotate(surface, -self.rotation)
+        surface: Surface = pygame.Surface((obj.width, obj.height), pygame.SRCALPHA)
+        surface.fill(TRACK.CHECKPOINT_COLOUR)
 
-        screen.blit(rotated_surface, (self.x, self.y))
+        self.original_surface = surface
+        self.surface = pygame.transform.rotate(surface, -obj.rotation)
+
+        print(np.isclose(np.sign(-obj.rotation), 1))
+        if np.isclose(np.sign(-obj.rotation), 1):
+            self.surface.fill((0, 255, 0))
+            self.surface_rect = self.surface.get_rect(
+                center=surface.get_rect(bottomleft=(obj.x, obj.y)).center
+            )
+        else:
+            self.surface_rect = self.surface.get_rect(
+                center=surface.get_rect(topleft=(obj.x, obj.y)).center
+            )
+
+    def draw(self, screen: Surface) -> None:
+        pygame.draw.circle(screen, (255, 0, 0), (self.x, self.y), radius=5)
+        screen.blit(self.surface, self.surface_rect)
+        self.rotation += 1
