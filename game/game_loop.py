@@ -2,6 +2,7 @@ import pygame
 
 from pygame import Surface
 from pygame.time import Clock
+from pygame.math import Vector2
 from game.car import Car
 from game.track import Track
 from game.input_handler import InputHandler
@@ -41,11 +42,11 @@ class GameLoop:
         # Sets the window's title.
         pygame.display.set_caption('NEAT-ish Racing')
 
-        # TODO: Instantiate multiple cars.
-        self.cars: list[Car] = [Car()]
-
         # TODO: Load different tracks.
-        self.track: Track = Track('./game/img/track_0.png')
+        self.track: Track = Track('./game/tracks/raw/track_0.tmx')
+
+        # TODO: Instantiate multiple cars.
+        self.cars: list[Car] = [Car(start_pos=self.track.start_pos)]
 
     def run(self) -> None:
 

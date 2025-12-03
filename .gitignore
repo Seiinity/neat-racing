@@ -60,3 +60,6 @@ target/
 
 # JetBrains
 .idea/
+
+# Tiled sessions.
+*.tiled-session

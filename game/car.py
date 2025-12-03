@@ -27,9 +27,9 @@ class Car:
         Draws the car on the screen.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, start_pos: Vector2) -> None:
 
-        self.position: Vector2 = Vector2(640.0, 360.0)
+        self.position: Vector2 = start_pos
         self.velocity: float = 0.0
         self.angle: float = 0.0
 
