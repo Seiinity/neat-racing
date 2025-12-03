@@ -15,3 +15,6 @@ class Events:
     on_keypress_accelerate: Event = Event()
     on_keypress_brake: Event = Event()
     on_keypress_turn: Event = Event()
+
+    # Debug input events.
+    on_keypress_checkpoints: Event = Event()

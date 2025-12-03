@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import pytmx
 import pygame
-import numpy as np
 
+from game.events import Events
 from pygame.math import Vector2
 from pygame.rect import Rect
 from pygame.surface import Surface
@@ -22,17 +24,21 @@ class Track:
         self.finish_line: Rect = self._load_finish_line()
         self.start_pos: Vector2 = self._load_start_pos()
 
+        self._show_checkpoints: bool = False
+
+        self._add_listeners()
+
     def _load_background(self) -> Surface:
 
         bg_layer: TiledImageLayer = self.tmx_data.layers[0]
         return pygame.transform.scale(bg_layer.image, (self.width, self.height))
 
-    def _load_checkpoints(self):
+    def _load_checkpoints(self) -> list[Checkpoint]:
 
         object_layer: TiledObjectGroup = self.tmx_data.layers[1]
         return [Checkpoint(obj) for obj in object_layer if obj.type == 'checkpoint']
 
-    def _load_finish_line(self):
+    def _load_finish_line(self) -> Rect:
 
         object_layer: TiledObjectGroup = self.tmx_data.layers[1]
         finish_line_obj: TiledObject = next(obj for obj in object_layer if obj.name == 'finish_line')
@@ -44,11 +50,23 @@ class Track:
         start_pos_obj: TiledObject = next(obj for obj in object_layer if obj.name == 'start_pos')
         return Vector2(start_pos_obj.x, start_pos_obj.y)
 
+    def _add_listeners(self) -> None:
+
+        Events.on_keypress_checkpoints.add_listener(self._toggle_checkpoints)
+
     def draw(self, screen: Surface) -> None:
 
         screen.blit(self.background, (0, 0))
+
+        if not self._show_checkpoints:
+            return
+
         for checkpoint in self.checkpoints:
             checkpoint.draw(screen)
+
+    def _toggle_checkpoints(self) -> None:
+
+        self._show_checkpoints = not self._show_checkpoints
 
 
 class Checkpoint:
@@ -56,14 +74,6 @@ class Checkpoint:
     def __init__(self, obj: TiledObject):
 
         self.order: int = obj.properties.get('order')
-        self.x: float = obj.x
-        self.y: float = obj.y
-
-        self.surface: Surface | None = None
-        self.surface_rect: Rect | None = None
-        self.original_surface: Surface | None = None
-        self.rotation = 0
-
         self._load_surface(obj)
 
     def _load_surface(self, obj: TiledObject) -> None:

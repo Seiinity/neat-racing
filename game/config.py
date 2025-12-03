@@ -27,6 +27,8 @@ class InputConfig:
     KEY_TURN_LEFT: int = pygame.K_a
     KEY_TURN_RIGHT: int = pygame.K_d
 
+    KEY_CHECKPOINTS: int = pygame.K_0
+
 
 @dataclass(frozen=True)
 class CarConfig:

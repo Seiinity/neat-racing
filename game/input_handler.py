@@ -17,6 +17,12 @@ class InputHandler:
     @staticmethod
     def update() -> None:
 
+        InputHandler._update_held_keys()
+        InputHandler._update_pressed_keys()
+
+    @staticmethod
+    def _update_held_keys():
+
         keys = pygame.key.get_pressed()
 
         if keys[INPUT.KEY_ACCELERATE]:
@@ -30,3 +36,11 @@ class InputHandler:
 
         if keys[INPUT.KEY_TURN_RIGHT]:
             Events.on_keypress_turn.broadcast(data=1)
+
+    @staticmethod
+    def _update_pressed_keys():
+
+        for event in pygame.event.get(pygame.KEYDOWN):
+
+            if event.key == INPUT.KEY_CHECKPOINTS:
+                Events.on_keypress_checkpoints.broadcast()
