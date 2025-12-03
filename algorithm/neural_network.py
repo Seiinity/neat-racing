@@ -31,7 +31,7 @@ class NeuralNetwork:
     used for genetic algorithms.
     """
 
-    def __init__(self, layers: list[DenseLayer]):
+    def __init__(self, layers: list[DenseLayer]) -> None:
 
         self.layers: list[DenseLayer] = layers
 

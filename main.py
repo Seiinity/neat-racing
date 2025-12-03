@@ -1,7 +1,9 @@
-﻿def main():
+﻿from game.game_loop import GameLoop
 
-    # TODO: Basically everything!
-    return
+def main():
+
+    game_loop = GameLoop()
+    game_loop.run()
 
 if __name__ == "__main__":
     main()

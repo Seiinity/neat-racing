@@ -28,7 +28,7 @@ class Genome:
 
     Methods
     -------
-    random(input_size, output_size) -> Genome (static)
+    random(input_size: int, output_size: int) -> Genome (static)
         Creates a genome with a random topology, activation functions, and weights.
     get_layer_weights() -> list[tuple[NDArray[float], NDArray[float]]]
         Returns the weights and biases of each layer of the genome.
