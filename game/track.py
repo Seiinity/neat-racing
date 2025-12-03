@@ -68,24 +68,20 @@ class Checkpoint:
 
     def _load_surface(self, obj: TiledObject) -> None:
 
-        surface: Surface = pygame.Surface((obj.width, obj.height), pygame.SRCALPHA)
+        surface = pygame.Surface((obj.width, obj.height), pygame.SRCALPHA)
         surface.fill(TRACK.CHECKPOINT_COLOUR)
 
-        self.original_surface = surface
         self.surface = pygame.transform.rotate(surface, -obj.rotation)
 
-        print(np.isclose(np.sign(-obj.rotation), 1))
-        if np.isclose(np.sign(-obj.rotation), 1):
-            self.surface.fill((0, 255, 0))
-            self.surface_rect = self.surface.get_rect(
-                center=surface.get_rect(bottomleft=(obj.x, obj.y)).center
-            )
-        else:
-            self.surface_rect = self.surface.get_rect(
-                center=surface.get_rect(topleft=(obj.x, obj.y)).center
-            )
+        # Pygame's rotate() shifts the pivot point every 90 degrees.
+        # This compensates with a y offset for rotations in 90-179 and 270-359.
+        normalised = obj.rotation % 360
+        needs_offset = (int(normalised - 1) // 90) % 2 == 1
+        y_offset = -self.surface.get_height() if needs_offset else 0
+
+        # Calculates the position and dimensions of the surface.
+        self.surface_rect = self.surface.get_rect(topleft=(obj.x, obj.y + y_offset))
 
     def draw(self, screen: Surface) -> None:
-        pygame.draw.circle(screen, (255, 0, 0), (self.x, self.y), radius=5)
+
         screen.blit(self.surface, self.surface_rect)
-        self.rotation += 1
