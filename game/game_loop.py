@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 import pygame
 
 from pygame import Surface
 from pygame.time import Clock
-from pygame.math import Vector2
 from game.car import Car
+from game.events import Events
 from game.track import Track
 from game.input_handler import InputHandler
 from game.config import GAME
@@ -47,6 +49,8 @@ class GameLoop:
 
         # TODO: Instantiate multiple cars.
         self.cars: list[Car] = [Car(start_pos=self.track.start_pos)]
+
+        Events.on_car_moved.add_listener(self._check_collisions)
 
     def run(self) -> None:
 
@@ -120,3 +124,13 @@ class GameLoop:
             car.draw(self.screen)
 
         pygame.display.flip()
+
+    def _check_collisions(self, data) -> None:
+
+        car, shape_points = data
+
+        for point in shape_points:
+
+            if not self.track.is_on_track(point):
+                Events.on_car_collided.broadcast(data=(car, self.track))
+                return

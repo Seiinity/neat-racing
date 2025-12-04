@@ -42,6 +42,7 @@ class CarConfig:
     BRAKE_STRENGTH: float = 600
     TURN_SPEED: float = 4
     FRICTION: float = 0.98
+    SLIDING_FRICTION: float = 0.8
 
     SHAPE = {
         'triangle': [(0.75, 0), (-0.5, -0.5), (-0.5, 0.5)],

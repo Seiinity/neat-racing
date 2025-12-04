@@ -21,7 +21,7 @@ class Event:
 
         self.listeners: list[Callable[..., None]] = []
 
-    def add_listener(self, listener) -> None:
+    def add_listener(self, listener: Callable[..., None]) -> None:
 
         """
         Adds a function to the event's listeners.
@@ -35,7 +35,7 @@ class Event:
         if listener not in self.listeners:
             self.listeners.append(listener)
 
-    def remove_listener(self, listener) -> None:
+    def remove_listener(self, listener: Callable[..., None]) -> None:
 
         """
         Removes a function from the event's listeners.

@@ -1,9 +1,14 @@
+from __future__ import annotations
+
 import pygame
 import numpy as np
-from pygame.surface import Surface
-from pygame.math import Vector2
+
 from game.config import CAR
 from game.events import Events
+from game.track import Track
+from pygame.surface import Surface
+from pygame.math import Vector2
+from shapely.geometry import Point
 
 class Car:
 
@@ -38,6 +43,11 @@ class Car:
         self._is_braking: bool = False
         self._turn_direction: int = 0
 
+        # Stores previous state for collision handling.
+        self._previous_position: Vector2 = start_pos.copy()
+        self._previous_velocity: float = 0.0
+        self._direction: Vector2 = Vector2(1, 0)
+
         self._add_listeners()
 
     def fixed_update(self, dt: float) -> None:
@@ -60,6 +70,10 @@ class Car:
         Turn speed is controlled by ``CarConfig.TURN_SPEED``
         """
 
+        # Stores the previous position and velocity for collision handling.
+        self._previous_position = self.position.copy()
+        self._previous_velocity = self.velocity
+
         # Accelerates.
         if self._is_accelerating:
             self.velocity += CAR.ACCELERATION * dt
@@ -76,11 +90,86 @@ class Car:
         self.velocity *= CAR.FRICTION ** (dt * 60)
 
         # Changes the car's position based on direction and velocity.
-        direction: Vector2 = Vector2(np.cos(self.angle), np.sin(self.angle))
-        self.position += direction * self.velocity * dt
+        self._direction = Vector2(np.cos(self.angle), np.sin(self.angle))
+        self.position += self._direction * self.velocity * dt
+        Events.on_car_moved.broadcast(data=(self, self._get_transformed_points('triangle')))
 
         # Resets inputs.
         self._reset_input()
+
+    def _handle_collision(self, data: tuple[Car, Track]) -> None:
+
+        """
+        Handles collision with track boundaries.
+
+        Parameters
+        ----------
+        data : tuple[Car, Track]
+            Tuple containing the car instance and track that collided.
+
+        Notes
+        -----
+
+        Reverts the car to its previous position, calculates the wall normal
+        from the track boundary, and pushes it away from the wall.
+        """
+
+        car, track = data
+
+        # Only handles collision for this car instance.
+        if car is not self:
+            return
+
+        # Reverts to the previous safe position.
+        self.position = self._previous_position.copy()
+
+        # If no points are off track after reverting, all is good!
+        if self._all_points_on_track(track):
+            return
+
+        # Finds the track point which is nearest to the car's centre.
+        boundary = track.shape.boundary
+        nearest = boundary.interpolate(
+            boundary.project(Point(self.position.x, self.position.y))
+        )
+
+        # Calculates the collision normal.
+        normal = Vector2(self.position.x - nearest.x, self.position.y - nearest.y).normalize()
+
+        # Pushes the car away from the wall.
+        self.position += normal * CAR.SIZE * 0.1
+
+        # Calculates the velocity when sliding along a wall.
+        v = self._direction * self.velocity
+        normal_component = normal * v.dot(normal)
+        v_sliding = v - normal_component
+
+        # Applies sliding friction.
+        v_sliding *= CAR.SLIDING_FRICTION
+
+        # Recomputes the velocity and direction.
+        self.velocity = v_sliding.length()
+        self._direction = v_sliding.normalize()
+
+    def _all_points_on_track(self, track) -> bool:
+
+        """
+        Checks whether all points of the car's triangle shape are inside
+        a racing track.
+
+        Parameters
+        ----------
+        track : Track
+            The racing track to check the points on.
+
+        Returns
+        -------
+        bool
+            ``True`` if all points of the car's triangle shape are inside
+            the track, ``False`` otherwise.
+
+        """
+        return all(track.is_on_track(p) for p in self._get_transformed_points('triangle'))
 
     def draw(self, screen: Surface) -> None:
 
@@ -135,6 +224,7 @@ class Car:
         Events.on_keypress_accelerate.add_listener(self._accelerate)
         Events.on_keypress_brake.add_listener(self._brake)
         Events.on_keypress_turn.add_listener(self._turn)
+        Events.on_car_collided.add_listener(self._handle_collision)
 
     def _accelerate(self) -> None:
 
