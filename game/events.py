@@ -1,4 +1,4 @@
-from game.event import Event
+from game.core.event import Event
 
 class Events:
 
@@ -22,3 +22,6 @@ class Events:
     # Game events.
     on_car_moved: Event = Event()
     on_car_collided: Event = Event()
+    on_checkpoint_hit: Event = Event()
+    on_finish_line_crossed: Event = Event()
+    on_lap_completed: Event = Event()
