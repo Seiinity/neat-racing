@@ -3,6 +3,7 @@ from __future__ import annotations
 import pytmx
 import pygame
 
+from game.core.utils import draw_outlined_text
 from game.events import Events
 from pygame.math import Vector2
 from pygame.rect import Rect
@@ -116,3 +117,4 @@ class Checkpoint:
     def draw(self, screen: Surface) -> None:
 
         screen.blit(self.surface, self.surface_rect)
+        draw_outlined_text(screen, str(self.order), self.surface_rect.center)
