@@ -3,6 +3,7 @@ import pygame
 from pygame.surface import Surface
 from typing import Tuple
 
+
 def draw_outlined_text(
     screen: Surface,
     text: str,

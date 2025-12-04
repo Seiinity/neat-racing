@@ -13,6 +13,7 @@ from game.config import TRACK
 from shapely.geometry import Polygon, Point
 from shapely.affinity import rotate
 
+
 class Track:
 
     """

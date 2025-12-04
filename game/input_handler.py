@@ -3,6 +3,7 @@ import pygame
 from game.config import INPUT
 from game.events import Events
 
+
 class InputHandler:
 
     """

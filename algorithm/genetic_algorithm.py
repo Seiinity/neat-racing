@@ -3,6 +3,7 @@ from algorithm.genome import Genome
 from algorithm.config import GENETIC
 from rng import rng
 
+
 class GeneticAlgorithm:
 
     """
@@ -37,7 +38,9 @@ class GeneticAlgorithm:
         self.generation: int = 0
 
         # Creates the initial population from random Genomes and a fitness of 0.
-        self.population: list[tuple[Genome, float]] = [(Genome.random(input_size, output_size), 0) for _ in range(population_size)]
+        self.population: list[tuple[Genome, float]] = [
+            (Genome.random(input_size, output_size), 0) for _ in range(population_size)
+        ]
 
     def get_top(self, num: int) -> list[Genome]:
 
@@ -79,7 +82,9 @@ class GeneticAlgorithm:
         survivors: list[Genome] = self._select_survivors()
 
         # The elitism-chosen survivors get copied directly, the remaining ones have a chance to mutate.
-        new_population: list[tuple[Genome, float]] = [(genome.copy(), 0) for genome in survivors[:GENETIC.ELITISM_CUTOFF]]
+        new_population: list[tuple[Genome, float]] = [
+            (genome.copy(), 0) for genome in survivors[:GENETIC.ELITISM_CUTOFF]
+        ]
 
         # The remaining ones have a chance to mutate.
         for genome in survivors[GENETIC.ELITISM_CUTOFF:]:

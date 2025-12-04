@@ -4,6 +4,7 @@ from numpy.typing import NDArray
 from algorithm.activation_function import ActivationFunction
 from algorithm.genome import Genome
 
+
 class NeuralNetwork:
 
     """

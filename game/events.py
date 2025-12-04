@@ -1,5 +1,6 @@
 from game.core.event import Event
 
+
 class Events:
 
     """

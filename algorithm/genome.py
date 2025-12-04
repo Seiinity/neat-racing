@@ -8,6 +8,7 @@ from algorithm.config import GENOME, MUTATION
 from numpy.typing import NDArray
 from algorithm.activation_function import ActivationFunction, ReLU, Sigmoid, Tanh, Softmax
 
+
 class Genome:
 
     """
@@ -36,7 +37,14 @@ class Genome:
         Applies mutations to weights, activations, and/or topology.
     """
 
-    def __init__(self, input_size: int, output_size: int, topology: list[int], activations: list[ActivationFunction], weights: NDArray[float]) -> None:
+    def __init__(
+        self,
+        input_size: int,
+        output_size: int,
+        topology: list[int],
+        activations: list[ActivationFunction],
+        weights: NDArray[float]
+    ) -> None:
 
         self.input_size = input_size
         self.output_size = output_size
@@ -73,7 +81,9 @@ class Genome:
 
         # Computes the topology (number and sizes of hidden layers).
         num_hidden_layers: int = int(rng.integers(GENOME.MIN_LAYERS, GENOME.MAX_LAYERS, endpoint=True))
-        topology: list[int] = rng.integers(GENOME.MIN_NEURONS, GENOME.MAX_NEURONS, endpoint=True, size=num_hidden_layers).tolist()
+        topology: list[int] = rng.integers(
+            GENOME.MIN_NEURONS, GENOME.MAX_NEURONS, endpoint=True, size=num_hidden_layers
+        ).tolist()
 
         # Computes random activation functions and weights/biases for each layer.
         activations: list[ActivationFunction] = Genome._random_activations(num_hidden_layers)
@@ -390,7 +400,7 @@ class Genome:
 
         # Creates a copy of the topology, activation functions, and weights.
         topology: list[int] = self.topology.copy()
-        activations: list[ActivationFunction] = self.activations.copy() # Shallow copy is fine.
+        activations: list[ActivationFunction] = self.activations.copy()  # Shallow copy is fine.
         weights: NDArray[float] = self.weights.copy()
 
         return Genome(self.input_size, self.output_size, topology, activations, weights)

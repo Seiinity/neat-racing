@@ -2,6 +2,7 @@
 from numpy.typing import NDArray
 from abc import ABC, abstractmethod
 
+
 class ActivationFunction(ABC):
 
     """

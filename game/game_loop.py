@@ -12,6 +12,7 @@ from game.track import Track
 from game.input_handler import InputHandler
 from game.config import GAME
 
+
 class GameLoop:
 
     """
