@@ -11,6 +11,7 @@ from pygame.surface import Surface
 from pytmx import TiledImageLayer, TiledObjectGroup, TiledObject, TiledMap
 from game.config import TRACK
 from shapely.geometry import Polygon, Point
+from shapely.affinity import rotate
 
 class Track:
 
@@ -91,6 +92,7 @@ class Track:
         point = Point(position.x, position.y)
         return self.shape.contains(point)
 
+
 class Checkpoint:
 
     def __init__(self, obj: TiledObject):
@@ -113,6 +115,18 @@ class Checkpoint:
 
         # Calculates the position and dimensions of the surface.
         self.surface_rect = self.surface.get_rect(topleft=(obj.x, obj.y + y_offset))
+
+        # Creates an accurate rotated polygon for collision checks.
+        rect = Polygon([
+            (obj.x, obj.y),
+            (obj.x + obj.width, obj.y),
+            (obj.x + obj.width, obj.y + obj.height),
+            (obj.x, obj.y + obj.height)
+        ])
+
+        # Rotates and buffers the shape.
+        # Buffering increases the size of the shape, which guarantees collisions at fast speeds.
+        self.shape = rotate(rect, obj.rotation, origin=(obj.x, obj.y)).buffer(5)
 
     def draw(self, screen: Surface) -> None:
 

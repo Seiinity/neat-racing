@@ -4,6 +4,8 @@ import pygame
 
 from pygame import Surface
 from pygame.time import Clock
+from shapely import Point
+
 from game.car import Car
 from game.events import Events
 from game.track import Track
@@ -50,7 +52,16 @@ class GameLoop:
         # TODO: Instantiate multiple cars.
         self.cars: list[Car] = [Car(start_pos=self.track.start_pos)]
 
+        self._add_listeners()
+
+    def _add_listeners(self) -> None:
+
+        """
+        Adds methods as event listeners.
+        """
+
         Events.on_car_moved.add_listener(self._check_collisions)
+        Events.on_car_moved.add_listener(self._check_checkpoints)
 
     def run(self) -> None:
 
@@ -134,3 +145,17 @@ class GameLoop:
             if not self.track.is_on_track(point):
                 Events.on_car_collided.broadcast(data=(car, self.track))
                 return
+
+    def _check_checkpoints(self, data) -> None:
+
+        car, shape_points = data
+        car_point = Point(car.position.x, car.position.y)
+
+        # Checks for checkpoint collisions.
+        for checkpoint in self.track.checkpoints:
+            if checkpoint.shape.contains(car_point):
+                Events.on_checkpoint_hit.broadcast(data=(car, checkpoint.order))
+
+        # Checks for finish line collisions.
+        if car.rect.colliderect(self.track.finish_line):
+            Events.on_finish_line_crossed.broadcast(data=(car, len(self.track.checkpoints)))

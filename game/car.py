@@ -23,6 +23,8 @@ class Car:
         The current velocity of the car, in pixels/s.
     angle : float
         The current angle of the car, in degrees.
+    rect : Rect
+        The car's Rect, used for checkpoint tracking.
 
     Methods
     -------
@@ -37,6 +39,11 @@ class Car:
         self.position: Vector2 = start_pos
         self.velocity: float = 0.0
         self.angle: float = 0.0
+        self._update_rect()
+
+        # Progression tracking.
+        self.current_checkpoint: int = 0
+        self.laps_completed: int = 0
 
         # Input state flags.
         self._is_accelerating: bool = False
@@ -49,6 +56,21 @@ class Car:
         self._direction: Vector2 = Vector2(1, 0)
 
         self._add_listeners()
+
+    def _update_rect(self) -> None:
+
+        """
+        Updates the bounding rect based on the actual triangle points.
+        """
+
+        points = self._get_transformed_points('triangle')
+        xs = [p.x for p in points]
+        ys = [p.y for p in points]
+
+        min_x, max_x = min(xs), max(xs)
+        min_y, max_y = min(ys), max(ys)
+
+        self.rect = pygame.Rect(min_x, min_y, max_x - min_x, max_y - min_y)
 
     def fixed_update(self, dt: float) -> None:
 
@@ -94,6 +116,9 @@ class Car:
         self.position += self._direction * self.velocity * dt
         Events.on_car_moved.broadcast(data=(self, self._get_transformed_points('triangle')))
 
+        # Updates the car Rect.
+        self._update_rect()
+
         # Resets inputs.
         self._reset_input()
 
@@ -109,7 +134,6 @@ class Car:
 
         Notes
         -----
-
         Reverts the car to its previous position, calculates the wall normal
         from the track boundary, and pushes it away from the wall.
         """
@@ -151,7 +175,7 @@ class Car:
         self.velocity = v_sliding.length()
         self._direction = v_sliding.normalize()
 
-    def _all_points_on_track(self, track) -> bool:
+    def _all_points_on_track(self, track: Track) -> bool:
 
         """
         Checks whether all points of the car's triangle shape are inside
@@ -170,6 +194,58 @@ class Car:
 
         """
         return all(track.is_on_track(p) for p in self._get_transformed_points('triangle'))
+
+    def _handle_checkpoint_hit(self, data: tuple[Car, int]) -> None:
+
+        """
+        Increases the current checkpoint once the car hits the checkpoint
+        it needs to hit next.
+
+        Parameters
+        ----------
+        data : tuple[Car, int]
+            Tuple containing the car instance and order of the hit checkpoint.
+        """
+
+        car, checkpoint = data
+
+        # Only handles collision for this car instance.
+        if car is not self:
+            return
+
+        # Only counts the needed checkpoint.
+        if checkpoint is not self.current_checkpoint:
+            return
+
+        # Increases the current checkpoint.
+        self.current_checkpoint += 1
+
+    def _handle_finish_line_crossed(self, data: tuple[Car, int]) -> None:
+
+        """
+        Completes a lap once the car crosses the finish line, but only
+        if all checkpoint have been hit beforehand.
+
+        Parameters
+        ----------
+        data : tuple[Car, int]
+            Tuple containing the car instance and the number of checkpoints
+            in the racing track.
+        """
+
+        car, num_checkpoints = data
+
+        # Only handles collision for this car instance.
+        if car is not self:
+            return
+
+        # Only counts if all checkpoints have been hit.
+        if num_checkpoints is not self.current_checkpoint:
+            return
+
+        # Increases the number of laps completed and resets checkpoints.
+        self.laps_completed += 1
+        self.current_checkpoint = 0
 
     def draw(self, screen: Surface) -> None:
 
@@ -224,7 +300,10 @@ class Car:
         Events.on_keypress_accelerate.add_listener(self._accelerate)
         Events.on_keypress_brake.add_listener(self._brake)
         Events.on_keypress_turn.add_listener(self._turn)
+
         Events.on_car_collided.add_listener(self._handle_collision)
+        Events.on_checkpoint_hit.add_listener(self._handle_checkpoint_hit)
+        Events.on_finish_line_crossed.add_listener(self._handle_finish_line_crossed)
 
     def _accelerate(self) -> None:
 
