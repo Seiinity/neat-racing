@@ -38,6 +38,10 @@ class GeneticConfig:
 
     ELITISM_CUTOFF: int = 5
 
+    REWARD_CHECKPOINT: int = 1000
+    REWARD_LAP: int = 10000
+    REWARD_TIME: int = 10
+
 
 GENOME = GenomeConfig()
 MUTATION = MutationConfig()
