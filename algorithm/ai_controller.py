@@ -27,6 +27,7 @@ class AIController:
         self.car: Car = car
         self.genome: Genome = genome
         self.network: NeuralNetwork = NeuralNetwork.from_genome(genome)
+        self.fitness: float = 0.0
 
         self.car.is_ai_controlled = True
 
@@ -90,4 +91,5 @@ class AIController:
         lap_score: float = self.car.laps_completed * GENETIC.REWARD_LAP
         time_score: float = self._time_alive * GENETIC.REWARD_TIME
 
-        return checkpoint_score + lap_score + time_score
+        self.fitness = checkpoint_score + lap_score + time_score
+        return self.fitness

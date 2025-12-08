@@ -42,6 +42,9 @@ class GeneticConfig:
     REWARD_LAP: int = 10000
     REWARD_TIME: int = 10
 
+    POPULATION_SIZE: int = 50
+    MAX_GENERATION_TIME: float = 60.0
+
 
 GENOME = GenomeConfig()
 MUTATION = MutationConfig()

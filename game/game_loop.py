@@ -45,7 +45,7 @@ class GameLoop:
         self.accumulator: float = 0.0
 
         # Sets the window's title.
-        pygame.display.set_caption('NEAT-ish Racing')
+        pygame.display.set_caption("NEAT-ish Racing")
 
         # TODO: Load different tracks.
         self.track: Track = Track('./game/tracks/raw/track_0.tmx')
