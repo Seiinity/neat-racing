@@ -1,5 +1,5 @@
-from dataclasses import dataclass
 import pygame
+from dataclasses import dataclass, field
 
 
 @dataclass(frozen=True)
@@ -29,6 +29,7 @@ class InputConfig:
     KEY_TURN_RIGHT: int = pygame.K_d
 
     KEY_CHECKPOINTS: int = pygame.K_0
+    KEY_SENSORS: int = pygame.K_1
 
 
 @dataclass(frozen=True)
@@ -41,14 +42,17 @@ class CarConfig:
     SIZE: int = 20
     ACCELERATION: float = 500
     BRAKE_STRENGTH: float = 600
-    TURN_SPEED: float = 4
+    TURN_SPEED: float = 220
     FRICTION: float = 0.98
     SLIDING_FRICTION: float = 0.8
 
-    SHAPE = {
+    SHAPE: dict = field(default_factory=lambda: {
         'triangle': [(0.75, 0), (-0.5, -0.5), (-0.5, 0.5)],
         'line': [(-2 / 3, -0.5), (-2 / 3, 0.5)]
-    }
+    })
+
+    SENSORS: list[float] = field(default_factory=lambda: [-60, -30, 0, 30, 60])
+    SENSOR_RANGE = 100
 
 
 @dataclass(frozen=True)

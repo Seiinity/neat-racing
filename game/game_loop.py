@@ -110,6 +110,9 @@ class GameLoop:
 
         InputHandler.update()
 
+        for car in self.cars:
+            car.update_sensors(self.track)
+
     def _fixed_update(self, dt: float) -> None:
 
         """

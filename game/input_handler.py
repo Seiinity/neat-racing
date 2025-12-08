@@ -45,3 +45,6 @@ class InputHandler:
 
             if event.key == INPUT.KEY_CHECKPOINTS:
                 Events.on_keypress_checkpoints.broadcast()
+
+            if event.key == INPUT.KEY_SENSORS:
+                Events.on_keypress_sensors.broadcast()

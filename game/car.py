@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import pygame
 import numpy as np
+from shapely import LineString
+from shapely.geometry.base import BaseGeometry
+from shapely.geometry.multipoint import MultiPoint
 
 from game.config import CAR
 from game.events import Events
@@ -56,22 +59,14 @@ class Car:
         self._previous_velocity: float = 0.0
         self._direction: Vector2 = Vector2(1, 0)
 
+        # AI data.
+        self.is_ai_controlled: bool = False
+        self.is_alive: bool = True
+        self.sensor_distances: list[float] = [0.0] * len(CAR.SENSORS)
+
+        self._show_sensors: bool = False
+
         self._add_listeners()
-
-    def _update_rect(self) -> None:
-
-        """
-        Updates the bounding rect based on the actual triangle points.
-        """
-
-        points = self._get_transformed_points('triangle')
-        xs = [p.x for p in points]
-        ys = [p.y for p in points]
-
-        min_x, max_x = min(xs), max(xs)
-        min_y, max_y = min(ys), max(ys)
-
-        self.rect = pygame.Rect(min_x, min_y, max_x - min_x, max_y - min_y)
 
     def fixed_update(self, dt: float) -> None:
 
@@ -93,6 +88,9 @@ class Car:
         Turn speed is controlled by ``CarConfig.TURN_SPEED``
         """
 
+        if not self.is_alive:
+            return
+
         # Stores the previous position and velocity for collision handling.
         self._previous_position = self.position.copy()
         self._previous_velocity = self.velocity
@@ -106,7 +104,7 @@ class Car:
             self.velocity -= CAR.BRAKE_STRENGTH * dt
 
         # Turns.
-        self.angle += self._turn_direction * CAR.TURN_SPEED * dt
+        self.angle += self._turn_direction * np.radians(CAR.TURN_SPEED) * dt
 
         # Applies friction to the car's velocity.
         # Friction is already a multiplicative decay, so it needs to be normalised.
@@ -121,7 +119,77 @@ class Car:
         self._update_rect()
 
         # Resets inputs.
-        self._reset_input()
+        if not self.is_ai_controlled:
+            self._reset_input()
+
+    def _update_rect(self) -> None:
+
+        """
+        Updates the bounding rect based on the actual triangle points.
+        """
+
+        points: list[Vector2] = self._get_transformed_points('triangle')
+        xs: list[float] = [p.x for p in points]
+        ys: list[float] = [p.y for p in points]
+
+        min_x, max_x = min(xs), max(xs)
+        min_y, max_y = min(ys), max(ys)
+
+        self.rect = pygame.Rect(min_x, min_y, max_x - min_x, max_y - min_y)
+
+    def update_sensors(self, track: Track) -> None:
+
+        if not self.is_alive:
+            return
+
+        for i, angle in enumerate(CAR.SENSORS):
+
+            # Calculates sensor directions.
+            sensor_angle: float = self.angle + np.radians(angle)
+            direction: Vector2 = Vector2(np.cos(sensor_angle), np.sin(sensor_angle))
+
+            # Casts a ray and finds the intersection.
+            distance: float = Car._raycast(self.position, direction, track)
+            self.sensor_distances[i] = distance / CAR.SENSOR_RANGE
+
+    def set_ai_controls(self, accelerate: bool, brake: bool, turn: int) -> None:
+
+        self._is_accelerating = accelerate
+        self._is_braking = brake
+        self._turn_direction = turn
+
+    @staticmethod
+    def _raycast(origin: Vector2, direction: Vector2, track: Track) -> float:
+
+        # Creates the ray's endpoint.
+        endpoint: Vector2 = origin + direction * CAR.SENSOR_RANGE
+        ray: LineString = LineString([origin, endpoint])
+
+        # Checks for an intersection with the track boundary.
+        intersection: BaseGeometry = ray.intersection(track.shape.boundary)
+
+        # Returns the max sensor range if there's no intersection.
+        if intersection.is_empty:
+            return CAR.SENSOR_RANGE
+
+        # Collect all intersection points into a list
+        points = []
+
+        if isinstance(intersection, Point):
+            points.append(intersection)
+        elif isinstance(intersection, MultiPoint):
+            points.extend(intersection.geoms)
+
+        min_dist = CAR.SENSOR_RANGE
+
+        # Finds the closest intersection point.
+        for point in points:
+
+            # Calculates the distance between the origin and the intersection point.
+            dist = np.sqrt((point.x - origin.x) ** 2 + (point.y - origin.y) ** 2)
+            min_dist = min(min_dist, dist)
+
+        return min_dist
 
     def _handle_collision(self, data: tuple[Car, Track]) -> None:
 
@@ -264,6 +332,26 @@ class Car:
         pygame.draw.polygon(screen, (255, 255, 255), self._get_transformed_points('triangle'), width=2)
         pygame.draw.line(screen, (255, 255, 255), *self._get_transformed_points('line'), width=2)
 
+        if self._show_sensors:
+            self._draw_sensors(screen)
+
+    def _draw_sensors(self, screen: Surface) -> None:
+
+        for i, angle_offset in enumerate(CAR.SENSORS):
+
+            sensor_angle: float = self.angle + np.radians(angle_offset)
+            direction: Vector2 = Vector2(np.cos(sensor_angle), np.sin(sensor_angle))
+            distance: float = self.sensor_distances[i] * CAR.SENSOR_RANGE
+            end_point: Vector2 = self.position + direction * distance
+
+            pygame.draw.line(
+                screen,
+                (255, 255, 0),
+                (self.position.x, self.position.y),
+                (end_point.x, end_point.y),
+                1
+            )
+
     def _get_transformed_points(self, part: str) -> list[Vector2]:
 
         """
@@ -305,6 +393,12 @@ class Car:
         Events.on_car_collided.add_listener(self._handle_collision)
         Events.on_checkpoint_hit.add_listener(self._handle_checkpoint_hit)
         Events.on_finish_line_crossed.add_listener(self._handle_finish_line_crossed)
+
+        Events.on_keypress_sensors.add_listener(self._toggle_sensors)
+
+    def _toggle_sensors(self) -> None:
+
+        self._show_sensors = not self._show_sensors
 
     def _accelerate(self) -> None:
 

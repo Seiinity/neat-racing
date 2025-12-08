@@ -19,6 +19,7 @@ class Events:
 
     # Debug input events.
     on_keypress_checkpoints: Event = Event()
+    on_keypress_sensors: Event = Event()
 
     # Game events.
     on_car_moved: Event = Event()
