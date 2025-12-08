@@ -50,6 +50,10 @@ class TrainingLoop:
         Creates a new generation of AI controllers.
         """
 
+        # Disposes of any existing cars.
+        for controller in self.controllers:
+            controller.car.dispose()
+
         self.controllers = []
         self.generation_timer = 0.0
 
@@ -166,10 +170,10 @@ class TrainingLoop:
         time_remaining = max(0, GENETIC.MAX_GENERATION_TIME - self.generation_timer)
         best_fitness = max(c.calculate_fitness() for c in self.controllers)
 
-        draw_outlined_text(self.screen, f"Generation: {self.genetic_algorithm.generation}", (10, 10))
-        draw_outlined_text(self.screen, f"Alive: {alive_count}/{GENETIC.POPULATION_SIZE}", (10, 50))
-        draw_outlined_text(self.screen, f"Time: {time_remaining:.1f}s", (10, 90))
-        draw_outlined_text(self.screen, f"Best Fitness: {best_fitness:.0f}", (10, 130))
+        draw_outlined_text(self.screen, f"Generation: {self.genetic_algorithm.generation}", (10, 10), align="left")
+        draw_outlined_text(self.screen, f"Alive: {alive_count}/{GENETIC.POPULATION_SIZE}", (10, 35), align="left")
+        draw_outlined_text(self.screen, f"Time: {time_remaining:.1f}s", (10, 60), align="left")
+        draw_outlined_text(self.screen, f"Best Fitness: {best_fitness:.0f}", (10, 85), align="left")
 
     def _is_generation_complete(self) -> bool:
 
@@ -241,17 +245,3 @@ class TrainingLoop:
         # Checks for finish line collisions.
         if car.rect.colliderect(self.track.finish_line):
             Events.on_finish_line_crossed.broadcast(data=(car, len(self.track.checkpoints)))
-
-
-def main():
-
-    """
-    Main entry point for training.
-    """
-
-    training = TrainingLoop()
-    training.run()
-
-
-if __name__ == "__main__":
-    main()

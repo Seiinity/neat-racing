@@ -90,6 +90,7 @@ class AIController:
         checkpoint_score: float = self.car.current_checkpoint * GENETIC.REWARD_CHECKPOINT
         lap_score: float = self.car.laps_completed * GENETIC.REWARD_LAP
         time_score: float = self._time_alive * GENETIC.REWARD_TIME
+        death_score: float = int(not self.car.is_alive) * GENETIC.REWARD_DEATH
 
-        self.fitness = checkpoint_score + lap_score + time_score
+        self.fitness = checkpoint_score + lap_score + time_score + death_score
         return self.fitness

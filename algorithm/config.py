@@ -41,6 +41,7 @@ class GeneticConfig:
     REWARD_CHECKPOINT: int = 1000
     REWARD_LAP: int = 10000
     REWARD_TIME: int = 10
+    REWARD_DEATH: int = -500
 
     POPULATION_SIZE: int = 50
     MAX_GENERATION_TIME: float = 60.0

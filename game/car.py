@@ -40,7 +40,7 @@ class Car:
 
     def __init__(self, start_pos: Vector2) -> None:
 
-        self.position: Vector2 = start_pos
+        self.position: Vector2 = start_pos.copy()
         self.velocity: float = 0.0
         self.angle: float = 0.0
         self._update_rect()
@@ -211,6 +211,13 @@ class Car:
 
         # Only handles collision for this car instance.
         if car is not self:
+            return
+
+        # For AI cars, collision means death.
+        if self.is_ai_controlled:
+
+            self.is_alive = False
+            self.velocity = 0.0
             return
 
         # Reverts to the previous safe position.
@@ -439,3 +446,19 @@ class Car:
         self._is_accelerating = False
         self._is_braking = False
         self._turn_direction = 0
+
+    def dispose(self) -> None:
+
+        """
+        Removes all event listeners so that the car can be removed by garbage collection.
+        """
+
+        Events.on_keypress_accelerate.remove_listener(self._accelerate)
+        Events.on_keypress_brake.remove_listener(self._brake)
+        Events.on_keypress_turn.remove_listener(self._turn)
+
+        Events.on_car_collided.remove_listener(self._handle_collision)
+        Events.on_checkpoint_hit.remove_listener(self._handle_checkpoint_hit)
+        Events.on_finish_line_crossed.remove_listener(self._handle_finish_line_crossed)
+
+        Events.on_keypress_sensors.remove_listener(self._toggle_sensors)

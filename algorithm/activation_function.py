@@ -86,26 +86,3 @@ class Tanh(ActivationFunction):
 
     def forward(self, z: NDArray[float]) -> NDArray[float]:
         return np.tanh(z)
-
-
-class Softmax(ActivationFunction):
-
-    """
-    Softmax activation function.
-
-    Formula: ``f(z_i)=e^(z_i)/Σe^(z_j)``, with
-    output range ``(0,1)``, summing to 1.
-
-    Methods
-    -------
-    forward(z: NDArray[float]) -> NDArray[float]
-        Applies the activation function to the input.
-
-    Notes
-    -----
-    Used for the output layer of neural networks.
-    """
-
-    def forward(self, z: NDArray[float]) -> NDArray[float]:
-        exp_z: NDArray[float] = np.exp(z - np.max(z, axis=-1, keepdims=True))
-        return exp_z / np.sum(exp_z, axis=-1, keepdims=True)

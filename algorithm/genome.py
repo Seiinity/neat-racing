@@ -6,7 +6,7 @@ from enum import Enum
 from rng import rng
 from algorithm.config import GENOME, MUTATION
 from numpy.typing import NDArray
-from algorithm.activation_function import ActivationFunction, ReLU, Sigmoid, Tanh, Softmax
+from algorithm.activation_function import ActivationFunction, ReLU, Sigmoid, Tanh
 
 
 class Genome:
@@ -76,7 +76,7 @@ class Genome:
         and ``GENOME_MAX_LAYERS``.The number of neurons in each hidden layer is
         derived from ``GENOME_MIN_NEURONS`` and ``GENOME_MAX_NEURONS``.
 
-        The output layer's activation function is always softmax.
+        The output layer's activation function is always sigmoid.
         """
 
         # Computes the topology (number and sizes of hidden layers).
@@ -126,12 +126,12 @@ class Genome:
 
         Notes
         -----
-        A Softmax activation is always appended at the end for the output layer.
+        A sigmoid activation is always appended at the end for the output layer.
         """
 
-        # Creates a random activation function for each layer and adds a softmax function for the output layer.
+        # Creates a random activation function for each layer and adds a sigmoid function for the output layer.
         activations: list[ActivationFunction] = [Genome._random_activation() for _ in range(num_layers)]
-        activations.append(Softmax())
+        activations.append(Sigmoid())
         return activations
 
     @staticmethod
@@ -262,7 +262,7 @@ class Genome:
 
         Notes
         -----
-        This loops through all activation functions except the output layer's (which should stay as Softmax).
+        This loops through all activation functions except the output layer's (which should stay as sigmoid).
 
         It chooses random activations to mutate based on ``MUTATION_CHANCE_ACTIVATION``.
         """

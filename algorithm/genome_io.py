@@ -4,7 +4,7 @@ from typing import Type, TypedDict
 from pathlib import Path
 from numpy.typing import NDArray
 from algorithm.genome import Genome
-from algorithm.activation_function import ActivationFunction, ReLU, Sigmoid, Tanh, Softmax
+from algorithm.activation_function import ActivationFunction, ReLU, Sigmoid, Tanh
 
 
 class GenomeIO:
@@ -69,8 +69,7 @@ class GenomeIO:
         activation_map: dict[str, Type[ActivationFunction]] = {
             'ReLU': ReLU,
             'Sigmoid': Sigmoid,
-            'Tanh': Tanh,
-            'Softmax': Softmax
+            'Tanh': Tanh
         }
 
         # Reconstructs activation functions.
