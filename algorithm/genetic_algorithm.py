@@ -11,12 +11,6 @@ class GeneticAlgorithm:
 
     Attributes
     ----------
-    population_size : int
-        The number of genomes in the population.
-    input_size : int
-        The number of neurons in the input layer.
-    output_size : int
-        The number of neurons in the output layer.
     generation : int
         The current generation.
     population : list[tuple[Genome, float]]
@@ -38,10 +32,11 @@ class GeneticAlgorithm:
         base_genome: Genome | None = None
     ) -> None:
 
-        self.input_size: int = input_size
-        self.output_size: int = output_size
-        self.population_size: int = population_size
         self.generation: int = 0
+
+        self._input_size: int = input_size
+        self._output_size: int = output_size
+        self._population_size: int = population_size
 
         if base_genome is None:
 
@@ -51,6 +46,8 @@ class GeneticAlgorithm:
             ]
 
         else:
+
+            # Creates the initial population as copies of the provided genome.
             self.population: list[tuple[Genome, float]] = [
                 (base_genome.copy(), 0.0) for _ in range(population_size)
             ]
@@ -58,7 +55,7 @@ class GeneticAlgorithm:
     def get_top(self, num: int) -> list[Genome]:
 
         """
-        Returns the top genomes from the population.
+        Retrieves the top genomes from the population.
 
         Parameters
         ----------
@@ -88,7 +85,6 @@ class GeneticAlgorithm:
         -----
         The top ``ELITISM_CUTOFF`` genomes are directly copied to the new generation.
         The remaining genomes have a chance to be mutated.
-
         """
 
         self._evaluate_fitness(fitness_func)
@@ -122,7 +118,6 @@ class GeneticAlgorithm:
         Notes
         -----
         After evaluation, a fitness score is attributed to each genome.
-
         """
 
         self.population = [(genome, fitness_func(genome)) for genome, _ in self.population]
@@ -153,7 +148,7 @@ class GeneticAlgorithm:
         tournament_pool = self.population[:tournament_pool_size]
 
         # Runs the tournaments.
-        for _ in range(self.population_size - GENETIC.ELITISM_CUTOFF):
+        for _ in range(self._population_size - GENETIC.ELITISM_CUTOFF):
 
             winner = GeneticAlgorithm._run_tournament(tournament_pool)
             survivors.append(winner)
