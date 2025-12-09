@@ -51,7 +51,7 @@ class GameLoop:
         self.track: Track = Track('./game/tracks/raw/track_0.tmx')
 
         # TODO: Instantiate multiple cars.
-        self.cars: list[Car] = [Car(start_pos=self.track.start_pos)]
+        self.cars: list[Car] = [Car(start_pos=self.track.player_start_position)]
 
         self._add_listeners()
 
@@ -158,7 +158,7 @@ class GameLoop:
         # Checks for checkpoint collisions.
         for checkpoint in self.track.checkpoints:
             if checkpoint.shape.contains(car_point):
-                Events.on_checkpoint_hit.broadcast(data=(car, checkpoint.order))
+                Events.on_checkpoint_hit.broadcast(data=(car, checkpoint.order, len(self.track.checkpoints)))
 
         # Checks for finish line collisions.
         if car.rect.colliderect(self.track.finish_line):

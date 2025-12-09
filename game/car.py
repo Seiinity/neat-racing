@@ -2,16 +2,13 @@ from __future__ import annotations
 
 import pygame
 import numpy as np
-from shapely import LineString
-from shapely.geometry.base import BaseGeometry
-from shapely.geometry.multipoint import MultiPoint
 
+from pygame import Color, Surface, Vector2, Rect
+from shapely import LineString, MultiPoint, Point
+from shapely.geometry.base import BaseGeometry
 from game.config import CAR
 from game.events import Events
 from game.track import Track
-from pygame.surface import Surface
-from pygame.math import Vector2
-from shapely.geometry import Point
 
 
 class Car:
@@ -25,10 +22,6 @@ class Car:
         The current position of the car, in pixels.
     velocity : float
         The current velocity of the car, in pixels/s.
-    angle : float
-        The current angle of the car, in degrees.
-    rect : Rect
-        The car's Rect, used for checkpoint tracking.
 
     Methods
     -------
@@ -40,10 +33,10 @@ class Car:
 
     def __init__(self, start_pos: Vector2) -> None:
 
+        self.rect: Rect | None = None
         self.position: Vector2 = start_pos.copy()
         self.velocity: float = 0.0
-        self.angle: float = 0.0
-        self._update_rect()
+        self._angle: float = 0.0
 
         # Progression tracking.
         self.current_checkpoint: int = 0
@@ -59,13 +52,11 @@ class Car:
         self._previous_velocity: float = 0.0
         self._direction: Vector2 = Vector2(1, 0)
 
-        # AI data.
-        self.is_ai_controlled: bool = False
-        self.is_alive: bool = True
+        # Sensor data.
         self.sensor_distances: list[float] = [0.0] * len(CAR.SENSORS)
-
         self._show_sensors: bool = False
 
+        self._update_rect()
         self._add_listeners()
 
     def fixed_update(self, dt: float) -> None:
@@ -88,9 +79,6 @@ class Car:
         Turn speed is controlled by ``CarConfig.TURN_SPEED``
         """
 
-        if not self.is_alive:
-            return
-
         # Stores the previous position and velocity for collision handling.
         self._previous_position = self.position.copy()
         self._previous_velocity = self.velocity
@@ -104,14 +92,14 @@ class Car:
             self.velocity -= CAR.BRAKE_STRENGTH * dt
 
         # Turns.
-        self.angle += self._turn_direction * np.radians(CAR.TURN_SPEED) * dt
+        self._angle += self._turn_direction * np.radians(CAR.TURN_SPEED) * dt
 
         # Applies friction to the car's velocity.
         # Friction is already a multiplicative decay, so it needs to be normalised.
         self.velocity *= CAR.FRICTION ** (dt * 60)
 
         # Changes the car's position based on direction and velocity.
-        self._direction = Vector2(np.cos(self.angle), np.sin(self.angle))
+        self._direction = Vector2(np.cos(self._angle), np.sin(self._angle))
         self.position += self._direction * self.velocity * dt
         Events.on_car_moved.broadcast(data=(self, self._get_transformed_points('triangle')))
 
@@ -119,8 +107,7 @@ class Car:
         self._update_rect()
 
         # Resets inputs.
-        if not self.is_ai_controlled:
-            self._reset_input()
+        self._reset_input()
 
     def _update_rect(self) -> None:
 
@@ -139,13 +126,10 @@ class Car:
 
     def update_sensors(self, track: Track) -> None:
 
-        if not self.is_alive:
-            return
-
         for i, angle in enumerate(CAR.SENSORS):
 
             # Calculates sensor directions.
-            sensor_angle: float = self.angle + np.radians(angle)
+            sensor_angle: float = self._angle + np.radians(angle)
             direction: Vector2 = Vector2(np.cos(sensor_angle), np.sin(sensor_angle))
 
             # Casts a ray and finds the intersection.
@@ -213,13 +197,6 @@ class Car:
         if car is not self:
             return
 
-        # For AI cars, collision means death.
-        if self.is_ai_controlled:
-
-            self.is_alive = False
-            self.velocity = 0.0
-            return
-
         # Reverts to the previous safe position.
         self.position = self._previous_position.copy()
 
@@ -271,7 +248,7 @@ class Car:
         """
         return all(track.is_on_track(p) for p in self._get_transformed_points('triangle'))
 
-    def _handle_checkpoint_hit(self, data: tuple[Car, int]) -> None:
+    def _handle_checkpoint_hit(self, data: tuple[Car, int, int]) -> None:
 
         """
         Increases the current checkpoint once the car hits the checkpoint
@@ -279,11 +256,13 @@ class Car:
 
         Parameters
         ----------
-        data : tuple[Car, int]
+        data : tuple[Car, int, int]
             Tuple containing the car instance and order of the hit checkpoint.
+            It also contains the number of total checkpoints, which is unused in
+            this case.
         """
 
-        car, checkpoint = data
+        car, checkpoint, _ = data
 
         # Only handles collision for this car instance.
         if car is not self:
@@ -323,7 +302,7 @@ class Car:
         self.laps_completed += 1
         self.current_checkpoint = 0
 
-    def draw(self, screen: Surface) -> None:
+    def draw(self, screen: Surface, colour: Color = Color(255, 255, 255)) -> None:
 
         """
         Draws the car on the screen.
@@ -332,12 +311,14 @@ class Car:
         ----------
         screen : Surface
             The Pygame surface to draw on.
+        colour : Color
+            The colour to draw the car in.
         """
 
         # Draws the triangle and line.
         # The line's points must be unpacked as the line function accepts separate arguments.
-        pygame.draw.polygon(screen, (255, 255, 255), self._get_transformed_points('triangle'), width=2)
-        pygame.draw.line(screen, (255, 255, 255), *self._get_transformed_points('line'), width=2)
+        pygame.draw.polygon(screen, colour, self._get_transformed_points('triangle'), width=2)
+        pygame.draw.line(screen, colour, *self._get_transformed_points('line'), width=2)
 
         if self._show_sensors:
             self._draw_sensors(screen)
@@ -346,14 +327,14 @@ class Car:
 
         for i, angle_offset in enumerate(CAR.SENSORS):
 
-            sensor_angle: float = self.angle + np.radians(angle_offset)
+            sensor_angle: float = self._angle + np.radians(angle_offset)
             direction: Vector2 = Vector2(np.cos(sensor_angle), np.sin(sensor_angle))
             distance: float = self.sensor_distances[i] * CAR.SENSOR_RANGE
             end_point: Vector2 = self.position + direction * distance
 
             pygame.draw.line(
                 screen,
-                (255, 255, 0),
+                Color('#9ee88b'),
                 (self.position.x, self.position.y),
                 (end_point.x, end_point.y),
                 1
@@ -383,7 +364,7 @@ class Car:
         """
 
         return [
-            self.position + Vector2(x * CAR.SIZE, y * CAR.SIZE).rotate_rad(self.angle)
+            self.position + Vector2(x * CAR.SIZE, y * CAR.SIZE).rotate_rad(self._angle)
             for x, y in CAR.SHAPE[part]
         ]
 
@@ -450,7 +431,7 @@ class Car:
     def dispose(self) -> None:
 
         """
-        Removes all event listeners so that the car can be removed by garbage collection.
+        Liberates the car for garbage collection.
         """
 
         Events.on_keypress_accelerate.remove_listener(self._accelerate)

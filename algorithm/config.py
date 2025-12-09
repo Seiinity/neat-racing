@@ -22,10 +22,10 @@ class MutationConfig:
     Contains mutation-related configuration variables.
     """
 
-    CHANCE_WEIGHT: float = 0.01
-    CHANCE_TOPOLOGY: float = 0.01
-    CHANCE_ACTIVATION: float = 0.02
-    NOISE_LIMIT: float = 0.05
+    CHANCE_WEIGHT: float = 0.1
+    CHANCE_TOPOLOGY: float = 0.05
+    CHANCE_ACTIVATION: float = 0.05
+    NOISE_LIMIT: float = 0.1
     RESIZE_LIMIT: int = 4
 
 
@@ -38,13 +38,19 @@ class GeneticConfig:
 
     ELITISM_CUTOFF: int = 5
 
-    REWARD_CHECKPOINT: int = 1000
-    REWARD_LAP: int = 10000
-    REWARD_TIME: int = 10
-    REWARD_DEATH: int = -500
+    REWARD_DISTANCE: float = 2.0
+    REWARD_SAFETY: float = 50.0
+    REWARD_VELOCITY: float = 0.1
+    REWARD_CHECKPOINT: float = 1000.0
+    REWARD_LAP: float = 10000.0
+
+    PENALTY_WRONG_CHECKPOINT: float = -10000.0
+    PENALTY_TIME: float = -200.0
 
     POPULATION_SIZE: int = 50
-    MAX_GENERATION_TIME: float = 60.0
+    MAX_GENERATION_TIME: float = 30.0
+
+    TRAINING_INTERVAL: int = 4
 
 
 GENOME = GenomeConfig()

@@ -42,7 +42,7 @@ class CarConfig:
     SIZE: int = 20
     ACCELERATION: float = 500
     BRAKE_STRENGTH: float = 600
-    TURN_SPEED: float = 220
+    TURN_SPEED: float = 400
     FRICTION: float = 0.98
     SLIDING_FRICTION: float = 0.8
 
@@ -51,8 +51,8 @@ class CarConfig:
         'line': [(-2 / 3, -0.5), (-2 / 3, 0.5)]
     })
 
-    SENSORS: list[float] = field(default_factory=lambda: [-60, -30, 0, 30, 60])
-    SENSOR_RANGE = 100
+    SENSORS: list[float] = field(default_factory=lambda: [-45, -30, -15, 0, 15, 30, 45])
+    SENSOR_RANGE = 110
 
 
 @dataclass(frozen=True)

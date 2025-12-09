@@ -30,17 +30,24 @@ class GeneticAlgorithm:
         Creates the next generation of genomes.
     """
 
-    def __init__(self, population_size: int, input_size: int, output_size: int) -> None:
+    def __init__(self, population_size: int, input_size: int, output_size: int, base_genome: Genome | None = None) -> None:
 
         self.input_size: int = input_size
         self.output_size: int = output_size
         self.population_size: int = population_size
         self.generation: int = 0
 
-        # Creates the initial population from random Genomes and a fitness of 0.
-        self.population: list[tuple[Genome, float]] = [
-            (Genome.random(input_size, output_size), 0) for _ in range(population_size)
-        ]
+        if base_genome is None:
+
+            # Creates the initial population from random Genomes and a fitness of 0.
+            self.population: list[tuple[Genome, float]] = [
+                (Genome.random(input_size, output_size), 0) for _ in range(population_size)
+            ]
+
+        else:
+            self.population: list[tuple[Genome, float]] = [
+                (base_genome.copy(), 0.0) for _ in range(population_size)
+            ]
 
     def get_top(self, num: int) -> list[Genome]:
 
@@ -79,6 +86,12 @@ class GeneticAlgorithm:
         """
 
         self._evaluate_fitness(fitness_func)
+
+        # DEBUG: Print top genome weights hash before selection
+        self.population.sort(key=lambda x: x[1], reverse=True)
+        top_genome = self.population[0][0]
+        print(f"Top genome weights sum before: {top_genome.weights.sum():.6f}, fitness: {self.population[0][1]:.2f}")
+
         survivors: list[Genome] = self._select_survivors()
 
         # The elitism-chosen survivors get copied directly, the remaining ones have a chance to mutate.
@@ -94,6 +107,8 @@ class GeneticAlgorithm:
 
         self.generation += 1
         self.population = new_population
+
+        print(f"Elite genome weights sum after copy: {new_population[0][0].weights.sum():.6f}")
 
     def _evaluate_fitness(self, fitness_func: Callable[[Genome], float]) -> None:
 
@@ -126,18 +141,38 @@ class GeneticAlgorithm:
         Notes
         -----
         The top ``ELITISM_CUTOFF`` genomes are picked directly.
-        The remaining genomes go through tournament selection. This selection allows
-        for duplicate genomes, which is desirable for natural selection.
+        The remaining genomes go through tournament selection from the top 50% of the population.
+        This prevents very poor genomes from being selected.
         """
 
         # Sorts the population by fitness (descending) and keeps the best ones.
         self.population.sort(key=lambda x: x[1], reverse=True)
         survivors: list[Genome] = [genome for genome, _ in self.population[:GENETIC.ELITISM_CUTOFF]]
-        remaining_genomes: list[tuple[Genome, float]] = self.population[GENETIC.ELITISM_CUTOFF:]
 
-        # Runs tournaments on the remaining genomes.
+        # Only allow tournament selection from the top 50% of performers
+        tournament_pool_size = max(len(self.population) // 2, GENETIC.ELITISM_CUTOFF + 1)
+        tournament_pool = self.population[:tournament_pool_size]
+
+        # Debug: Show the fitness range of the tournament pool
+        pool_fitnesses = [fitness for _, fitness in tournament_pool]
+        print(f"Tournament pool size: {len(tournament_pool)}")
+        print(f"Tournament pool fitness range: [{min(pool_fitnesses):.2f}, {max(pool_fitnesses):.2f}]")
+
+        # Track what gets selected from tournaments
+        tournament_selections = []
+
+        # Runs tournaments on genomes from the top performers only
         for _ in range(self.population_size - GENETIC.ELITISM_CUTOFF):
-            survivors.append(GeneticAlgorithm._run_tournament(remaining_genomes))
+            winner = GeneticAlgorithm._run_tournament(tournament_pool)
+            survivors.append(winner)
+
+            # Find the fitness of the winner for debugging
+            winner_fitness = next(fitness for genome, fitness in tournament_pool if genome is winner)
+            tournament_selections.append(winner_fitness)
+
+        # Debug: Show what tournaments selected
+        print(
+            f"Tournament selections - Min: {min(tournament_selections):.2f}, Max: {max(tournament_selections):.2f}, Avg: {sum(tournament_selections) / len(tournament_selections):.2f}")
 
         return survivors
 

@@ -1,8 +1,9 @@
 import pygame
 
+from typing import Tuple
 from pygame.surface import Surface
 from pygame.rect import Rect
-from typing import Tuple
+from pytmx import TiledElement, TiledMap
 
 
 def draw_outlined_text(
@@ -13,7 +14,7 @@ def draw_outlined_text(
         outline_color: Tuple[int, int, int] = (0, 0, 0),
         outline_thickness: int = 2,
         font_size: int = 24,
-        align: str = "center"
+        align: str = "centre"
 ) -> None:
     """
     Draws text with an outline at a given position.
@@ -25,7 +26,7 @@ def draw_outlined_text(
     text : str
         The text to draw.
     pos : tuple[int, int]
-        The center position to draw the text at.
+        The centre position to draw the text at.
     text_color : tuple[int, int, int], optional
         The main text color (defaults to white).
     outline_color : tuple[int, int, int], optional
@@ -59,3 +60,33 @@ def draw_outlined_text(
 
     # Draws the main text.
     screen.blit(text_surf, get_rect(text_surf, pos))
+
+
+def get_tiled_layer(tmx_data: TiledMap, layer_name: str) -> TiledElement | None:
+
+    """
+    Retrieves a layer from a Tiled map by its name.
+
+    Parameters
+    ----------
+    tmx_data : TiledMap
+        The Tiled map to get the layer from.
+    layer_name : str
+        The name of the layer to retrieve.
+
+    Returns
+    -------
+    TiledElement | None
+        The layer retrieved, or ``None`` if the layer doesn't exist.
+    """
+
+    # There's a bug with pytmx's code. This is supposed to return an int,
+    # but directly returns a layer instead. This is because the dictionary
+    # that is supposed to store layer names their indices actually stores
+    # layer names and layers instead.
+    layer: TiledElement = tmx_data.get_layer_by_name(layer_name)  # type: ignore
+
+    if layer is None or layer == -1:
+        return None
+
+    return layer

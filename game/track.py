@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytmx
 import pygame
 
-from game.core.utils import draw_outlined_text
+from game.core.utils import draw_outlined_text, get_tiled_layer
 from game.events import Events
 from pygame.math import Vector2
 from pygame.rect import Rect
@@ -25,8 +25,10 @@ class Track:
         List of checkpoints on the track.
     finish_line : Rect
         The finish line rectangle.
-    start_pos : Vector2
-        The starting position for cars.
+    start_positions : list[Vector2]
+        A list of starting position for AI cars.
+    player_start_position : Vector2
+        The starting position for the player car.
     shape : Polygon
         The track's valid racing area.
 
@@ -48,9 +50,14 @@ class Track:
         self._show_checkpoints: bool = False
 
         self.checkpoints: list[Checkpoint] = self._load_checkpoints()
+        self.checkpoints.sort(key=lambda cp: cp.order)
+
         self.finish_line: Rect = self._load_finish_line()
-        self.start_pos: Vector2 = self._load_start_pos()
         self.shape: Polygon = self._load_shape()
+
+        self.start_positions: list[Vector2] = []
+        self.player_start_position: Vector2 = Vector2(0, 0)
+        self._load_start_positions()
 
         self._add_listeners()
 
@@ -63,9 +70,14 @@ class Track:
         -------
         Surface
             The scaled background surface.
+
+        Notes
+        -----
+        The background image is loaded from the layer of the Tiled map
+        with name ``bg``.
         """
 
-        bg_layer: TiledImageLayer = self._tmx_data.layers[0]
+        bg_layer: TiledImageLayer | None = get_tiled_layer(self._tmx_data, 'bg')
         return pygame.transform.scale(bg_layer.image, (self._width, self._height))
 
     def _load_checkpoints(self) -> list[Checkpoint]:
@@ -81,10 +93,10 @@ class Track:
         Notes
         -----
         Checkpoints are loaded from the layer of the Tiled map with
-        index 1 and must have the class 'checkpoint'.
+        name ``objects`` and must have the class ``checkpoint``.
         """
 
-        object_layer: TiledObjectGroup = self._tmx_data.layers[1]
+        object_layer: TiledObjectGroup | None = get_tiled_layer(self._tmx_data, 'objects')
         return [Checkpoint(obj) for obj in object_layer if obj.type == 'checkpoint']
 
     def _load_finish_line(self) -> Rect:
@@ -100,32 +112,31 @@ class Track:
         Notes
         -----
         The finish line is loaded from the layer of the Tiled map
-        with index 1 and must have the name 'finish_line'.
+        with name ``objects`` and must have the name ``finish_line``.
         """
 
-        object_layer: TiledObjectGroup = self._tmx_data.layers[1]
+        object_layer: TiledObjectGroup | None = get_tiled_layer(self._tmx_data, 'objects')
         finish_line_obj: TiledObject = next(obj for obj in object_layer if obj.name == 'finish_line')
         return Rect(finish_line_obj.x, finish_line_obj.y, finish_line_obj.width, finish_line_obj.height)
 
-    def _load_start_pos(self) -> Vector2:
+    def _load_start_positions(self) -> None:
 
         """
-        Loads the starting position from the Tiled map.
-
-        Returns
-        -------
-        Vector2
-            The starting position for cars.
+        Loads the starting positions from the Tiled map.
 
         Notes
         -----
-        The starting position is loaded from the layer of the
-        Tiled map with index 1 and must have the name 'start_pos'.
+        Starting positions are loaded from the layer of the Tiled map
+        with name ``objects``. The player's starting position must have the
+        type ``start_pos_player``. The AI's starting positions must have
+        the type ``start_pos``.
         """
 
-        object_layer: TiledObjectGroup = self._tmx_data.layers[1]
-        start_pos_obj: TiledObject = next(obj for obj in object_layer if obj.name == 'start_pos')
-        return Vector2(start_pos_obj.x, start_pos_obj.y)
+        object_layer: TiledObjectGroup | None = get_tiled_layer(self._tmx_data, 'objects')
+        player_start_pos_obj = next(obj for obj in object_layer if obj.type == 'start_pos_player')
+
+        self.start_positions = [Vector2(obj.x, obj.y) for obj in object_layer if obj.type == 'start_pos']
+        self.player_start_position = Vector2(player_start_pos_obj.x, player_start_pos_obj.y)
 
     def _load_shape(self) -> Polygon:
 
@@ -141,10 +152,10 @@ class Track:
         -----
         The track shape is created by subtracting the inner boundary from
         the outer boundary. Both polygons are loaded from the layer of the
-        Tiled map with index 2.
+        Tiled map with name ``bounds``.
         """
 
-        bounds_layer: TiledObjectGroup = self._tmx_data.layers[2]
+        bounds_layer: TiledObjectGroup | None = get_tiled_layer(self._tmx_data, 'bounds')
 
         polygons = [obj for obj in bounds_layer if hasattr(obj, 'points')]
         outer_bound = polygons[0]
@@ -325,3 +336,16 @@ class Checkpoint:
 
         screen.blit(self._surface, self._surface_rect)
         draw_outlined_text(screen, str(self.order), self._surface_rect.center)
+
+    def get_centre(self) -> Vector2:
+
+        """
+        Returns the centre of the checkpoint.
+
+        Returns
+        -------
+        Vector2
+            A Vector2 representing the centre point of the checkpoint.
+        """
+
+        return Vector2(self._surface_rect.center)

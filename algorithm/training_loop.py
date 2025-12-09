@@ -1,4 +1,5 @@
 import pygame
+from pygame import Vector2
 
 from pygame.surface import Surface
 from pygame.time import Clock
@@ -16,7 +17,7 @@ from game.track import Track
 
 class TrainingLoop:
 
-    def __init__(self) -> None:
+    def __init__(self, genome: Genome | None = None) -> None:
 
         pygame.init()
 
@@ -35,14 +36,19 @@ class TrainingLoop:
         self.genetic_algorithm: GeneticAlgorithm = GeneticAlgorithm(
             population_size=GENETIC.POPULATION_SIZE,
             input_size=len(CAR.SENSORS),
-            output_size=4
+            output_size=4,
+            base_genome=genome
         )
 
         self.controllers: list[AIController] = []
         self._generation_timer: float = 0.0
+        self._physics_step_count: int = 0  # Counts physics steps for AI synchronization
         self._create_generation()
 
         self._add_listeners()
+
+        # Force render.
+        Events.on_keypress_checkpoints.broadcast()
 
     def _create_generation(self) -> None:
 
@@ -50,18 +56,23 @@ class TrainingLoop:
         Creates a new generation of AI controllers.
         """
 
-        # Disposes of any existing cars.
+        # Disposes of any existing controllers.
         for controller in self.controllers:
-            controller.car.dispose()
+            controller.dispose()
 
         self.controllers = []
-        self.generation_timer = 0.0
+        self._generation_timer = 0.0
+        self._physics_step_count = 0  # Reset step counter
 
-        for genome, _ in self.genetic_algorithm.population:
+        for i, (genome, _) in enumerate(self.genetic_algorithm.population):
 
-            car: Car = Car(start_pos=self.track.start_pos)
+            start_pos: Vector2 = self.track.start_positions[i % len(self.track.start_positions)]
+            car: Car = Car(start_pos=start_pos)
             controller: AIController = AIController(car, genome)
             self.controllers.append(controller)
+
+        # Force render.
+        Events.on_keypress_sensors.broadcast()
 
     def _add_listeners(self) -> None:
 
@@ -84,15 +95,13 @@ class TrainingLoop:
 
             dt: float = self.clock.tick(GAME.FPS) / 1000.0
             self.accumulator += dt
-            self.generation_timer += dt
 
-            # Fixed timestep updates
+            # Fixed timestep loop - everything runs here for determinism
             while self.accumulator >= GAME.FIXED_DT:
-
                 self._fixed_update(GAME.FIXED_DT)
+                self._generation_timer += GAME.FIXED_DT  # Timer increments with fixed steps only!
                 self.accumulator -= GAME.FIXED_DT
 
-            self._update(dt)
             self._draw()
 
             # Check if generation is complete
@@ -111,38 +120,38 @@ class TrainingLoop:
             if event.type == pygame.QUIT:
                 self.running = False
 
-    def _update(self, dt: float) -> None:
-
-        """
-        Handles per-frame updates.
-
-        Parameters
-        ----------
-        dt : float
-            Time since the last frame, in seconds.
-        """
-
-        for controller in self.controllers:
-
-            controller.update(dt)
-
-            if controller.car.is_alive:
-                controller.car.update_sensors(self.track)
-
     def _fixed_update(self, dt: float) -> None:
 
         """
-        Handles fixed-timestep updates for physics and movement.
+        Handles fixed-timestep updates for physics and AI.
 
         Parameters
         ----------
         dt : float
             Fixed timestep duration, in seconds.
+
+        Notes
+        -----
+        The AI controller only makes decisions every ``AI_STEPS_INTERVAL``
+        physics steps for performance, while maintaining determinism.
         """
 
-        # Updates only the cars which are alive.
-        for controller in (c for c in self.controllers if c.car.is_alive):
+        # Checks whether the AI controller should make a decision this physics step.
+        run_ai = (self._physics_step_count % GENETIC.TRAINING_INTERVAL == 0)
+
+        # Updates all living controllers and cars.
+        for controller in [c for c in self.controllers if c.is_alive]:
+
+            # Waits for actions from the AI controller, sparsely.
+            if run_ai:
+                controller.car.update_sensors(self.track)
+                controller.make_decision(dt * GENETIC.TRAINING_INTERVAL)
+
+            # Applies the current actions and updates the car.
+            controller.fixed_update()
             controller.car.fixed_update(dt)
+
+        self._physics_step_count += 1
 
     def _draw(self) -> None:
 
@@ -152,8 +161,18 @@ class TrainingLoop:
 
         self.track.draw(self.screen)
 
+        # Calculate fitness for all controllers
+        fitness_values = [(c, c.fitness) for c in self.controllers]
+
+        # Find best and worst fitness values
+        best_fitness = max(fitness_values, key=lambda x: x[1])[1]
+        worst_fitness = min(fitness_values, key=lambda x: x[1])[1]
+
         for controller in self.controllers:
-            controller.car.draw(self.screen)
+            controller_fitness = next(f for c, f in fitness_values if c == controller)
+            is_best = (controller_fitness == best_fitness)
+            is_worst = (controller_fitness == worst_fitness) and not is_best
+            controller.draw(self.screen, is_best, is_worst)
 
         # Draw stats
         self._draw_stats()
@@ -166,9 +185,9 @@ class TrainingLoop:
         Draws training statistics on screen.
         """
 
-        alive_count = sum(c.car.is_alive for c in self.controllers)
-        time_remaining = max(0, GENETIC.MAX_GENERATION_TIME - self.generation_timer)
-        best_fitness = max(c.calculate_fitness() for c in self.controllers)
+        alive_count = sum(c.is_alive for c in self.controllers)
+        time_remaining = max(0, GENETIC.MAX_GENERATION_TIME - self._generation_timer)
+        best_fitness = max(c.fitness for c in self.controllers)
 
         draw_outlined_text(self.screen, f"Generation: {self.genetic_algorithm.generation}", (10, 10), align="left")
         draw_outlined_text(self.screen, f"Alive: {alive_count}/{GENETIC.POPULATION_SIZE}", (10, 35), align="left")
@@ -187,10 +206,10 @@ class TrainingLoop:
         """
 
         # Checks if all cars are dead.
-        all_dead = all(not c.car.is_alive for c in self.controllers)
+        all_dead = all(not c.is_alive for c in self.controllers)
 
         # Checks if the time limit has been reached.
-        time_up = self.generation_timer >= GENETIC.MAX_GENERATION_TIME
+        time_up = self._generation_timer >= GENETIC.MAX_GENERATION_TIME
 
         return all_dead or time_up
 
@@ -201,12 +220,12 @@ class TrainingLoop:
         """
 
         # Maps genomes to controllers.
-        genome_to_controller = {c.genome: c for c in self.controllers}
+        genome_to_controller = {id(c.genome): c for c in self.controllers}
 
         # Calculates the fitness for all controllers.
         def fitness_func(genome: Genome) -> float:
-            c = genome_to_controller.get(genome)
-            return c.calculate_fitness() if c else 0.0
+            c = genome_to_controller.get(id(genome))
+            return c.fitness if c else 0.0
 
         # Evolves the population.
         self.genetic_algorithm.next_generation(fitness_func)
@@ -217,6 +236,7 @@ class TrainingLoop:
         print(f"""
         === Generation {self.genetic_algorithm.generation - 1} Complete ===
         Average Fitness: {average_fitness:.2f}
+        Elite genome weights sum: {self.controllers[0].genome.weights.sum():.6f}
         """)
 
         # Creates a new generation.
@@ -229,7 +249,7 @@ class TrainingLoop:
         for point in shape_points:
 
             if not self.track.is_on_track(point):
-                Events.on_car_collided.broadcast(data=(car, self.track))
+                Events.on_car_die.broadcast(data=car)
                 return
 
     def _check_checkpoints(self, data) -> None:
@@ -240,7 +260,7 @@ class TrainingLoop:
         # Checks for checkpoint collisions.
         for checkpoint in self.track.checkpoints:
             if checkpoint.shape.contains(car_point):
-                Events.on_checkpoint_hit.broadcast(data=(car, checkpoint.order))
+                Events.on_checkpoint_hit.broadcast(data=(car, checkpoint.order, len(self.track.checkpoints)))
 
         # Checks for finish line collisions.
         if car.rect.colliderect(self.track.finish_line):
