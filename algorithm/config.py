@@ -50,6 +50,7 @@ class GeneticConfig:
     POPULATION_SIZE: int = 50
     MAX_GENERATION_TIME: float = 30.0
 
+    TRAINING_SPEED: int = 1
     TRAINING_INTERVAL: int = 4
 
 

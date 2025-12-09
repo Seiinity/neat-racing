@@ -33,7 +33,7 @@ def main():
 
             print("\n=== AI Training Mode - From Best ===\n")
 
-            training = TrainingLoop(GenomeIO.load_genome('./saved_genomes/genome_gen989_rank1.pkl'))
+            training = TrainingLoop(GenomeIO.load_genome('./saved_genomes/genome_gen2_rank1.pkl'))
             training.run()
 
             print("\nSaving top 5 genomes...")

@@ -30,7 +30,7 @@ class TrainingLoop:
         pygame.display.set_caption("NEAT-ish Racing - Training Mode")
 
         # Loads the training track.
-        self.track: Track = Track('./game/tracks/raw/track_0.tmx')
+        self.track: Track = Track('./game/tracks/raw/track_1.tmx')
 
         # Initialises the genetic algorithm.
         self.genetic_algorithm: GeneticAlgorithm = GeneticAlgorithm(
@@ -94,7 +94,7 @@ class TrainingLoop:
             self._process_events()
 
             dt: float = self.clock.tick(GAME.FPS) / 1000.0
-            self.accumulator += dt
+            self.accumulator += dt * GENETIC.TRAINING_SPEED
 
             # Fixed timestep loop - everything runs here for determinism
             while self.accumulator >= GAME.FIXED_DT:

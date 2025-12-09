@@ -52,7 +52,7 @@ class CarConfig:
     })
 
     SENSORS: list[float] = field(default_factory=lambda: [-45, -30, -15, 0, 15, 30, 45])
-    SENSOR_RANGE = 110
+    SENSOR_RANGE = 100
 
 
 @dataclass(frozen=True)
