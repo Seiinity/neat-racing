@@ -4,7 +4,7 @@ import pygame
 
 from pygame import Surface
 from pygame.time import Clock
-from config import GAME
+from config import GAME, COLOURS
 from src.training import AIController
 from src.io import GenomeIO
 from src.core import Car, Events, Track
@@ -41,7 +41,7 @@ class GameLoop:
 
         pygame.init()
 
-        self.screen: Surface = pygame.display.set_mode((1280, 720))
+        self.screen: Surface = pygame.display.set_mode((GAME.SCREEN_WIDTH, GAME.SCREEN_HEIGHT))
         self.clock: Clock = Clock()
         self.running: bool = True
         self.accumulator: float = 0.0
@@ -53,7 +53,8 @@ class GameLoop:
         draw_outlined_text(
             self.screen,
             "Loading...",
-            (GAME.SCREEN_WIDTH // 2, GAME.SCREEN_HEIGHT // 2)
+            (GAME.SCREEN_WIDTH // 2, GAME.SCREEN_HEIGHT // 2),
+            text_colour=COLOURS.TEXT_SECONDARY
         )
 
         pygame.display.flip()

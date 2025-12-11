@@ -1,8 +1,8 @@
 import pygame
 
-from config import COLOURS
-from pygame import Surface, Color
+from pygame import Surface
 from pygame.time import Clock
+from config import COLOURS, FONTS, GAME
 from src.core.utils import draw_outlined_text
 from .button import Button
 
@@ -28,43 +28,43 @@ class MainMenu:
 
         pygame.init()
 
-        self.screen: Surface = pygame.display.set_mode((1280, 720))
+        self.screen: Surface = pygame.display.set_mode((GAME.SCREEN_WIDTH, GAME.SCREEN_HEIGHT))
         self.clock: Clock = Clock()
         self.running: bool = True
         self.selected_mode: str | None = None
 
         pygame.display.set_caption("NEAT-ish Racing")
 
+        # Resets the cursor.
+        pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
+
         # Creates the menu buttons.
-        button_width: int = 300
-        button_height: int = 70
-        button_x: int = (1280 - button_width) // 2
+        button_width: int = 150
+        button_height: int = 40
+        button_x: int = (GAME.SCREEN_WIDTH - button_width) // 2
 
         self._train_button: Button = Button(
             x=button_x,
-            y=320,
+            y=330,
             width=button_width,
             height=button_height,
-            text="Train AI",
-            colour=COLOURS.BACKGROUND
+            text="Train AI"
         )
 
         self._play_button: Button = Button(
             x=button_x,
-            y=400,
+            y=380,
             width=button_width,
             height=button_height,
-            text="Play",
-            colour=COLOURS.BACKGROUND
+            text="Play"
         )
 
         self._quit_button: Button = Button(
             x=button_x,
-            y=480,
+            y=430,
             width=button_width,
             height=button_height,
-            text="Quit",
-            colour=COLOURS.BACKGROUND
+            text="Quit"
         )
 
     def run(self) -> str | None:
@@ -121,16 +121,24 @@ class MainMenu:
         Draws the menu screen.
         """
 
-        # Dark background.
+        # Background.
         self.screen.fill(COLOURS.BACKGROUND)
 
         # Title.
         draw_outlined_text(
             self.screen,
             "NEAT-ish Racing",
-            (640, 150),
-            align="center",
-            font_size=64
+            (GAME.SCREEN_WIDTH // 2, 150),
+            font_size=FONTS.SIZE_XL
+        )
+
+        # Subtitle.
+        draw_outlined_text(
+            self.screen,
+            "A Neuroevolution Racing Game",
+            (GAME.SCREEN_WIDTH // 2, 190),
+            font_size=FONTS.SIZE_LARGE,
+            text_colour=COLOURS.TEXT_SECONDARY
         )
 
         # Buttons.
@@ -142,10 +150,9 @@ class MainMenu:
         draw_outlined_text(
             self.screen,
             "Press ESC to quit",
-            (640, 650),
-            align="center",
-            font_size=18,
-            text_colour=Color(100, 100, 100)
+            (GAME.SCREEN_WIDTH // 2, 600),
+            font_size=FONTS.SIZE_NORMAL,
+            text_colour=COLOURS.TEXT_SECONDARY
         )
 
         pygame.display.flip()

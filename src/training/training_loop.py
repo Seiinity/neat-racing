@@ -1,9 +1,9 @@
 import pygame
 
 from pathlib import Path
-from pygame import Vector2, Surface, Color
+from pygame import Vector2, Surface
 from pygame.time import Clock
-from config import TRAINING, CAR, GAME
+from config import COLOURS, TRAINING, CAR, GAME
 from src.algorithm import GeneticAlgorithm, Genome
 from src.io import GenomeIO
 from src.core.car import Car, Track
@@ -54,34 +54,23 @@ class TrainingLoop:
 
         pygame.init()
 
-        self.screen: Surface = pygame.display.set_mode((400, 100))
+        self.screen: Surface = pygame.display.set_mode((GAME.SCREEN_WIDTH, GAME.SCREEN_HEIGHT))
         self.clock: Clock = Clock()
         self.running: bool = True
         self.accumulator: float = 0.0
 
         pygame.display.set_caption("NEAT-ish Racing - Training")
 
-        # Shows a loading screen.
-        self.screen.fill((0, 0, 0))
-        draw_outlined_text(
-            self.screen,
-            "Loading...",
-            (GAME.SCREEN_WIDTH // 2, GAME.SCREEN_HEIGHT // 2)
-        )
-
-        pygame.display.flip()
-
         # Starts in console mode for maximum performance.
         self.visual_mode: bool = False
 
         # Creates the toggle button.
         self.toggle_button = Button(
-            x=125,
-            y=50,
-            width=150,
-            height=30,
-            text="Show Training",
-            colour=Color(50, 100, 200)
+            x=(GAME.SCREEN_WIDTH // 2) - 100,
+            y=GAME.SCREEN_HEIGHT // 2,
+            width=200,
+            height=40,
+            text="Show Training"
         )
 
         # Genome saving configuration.
@@ -91,6 +80,17 @@ class TrainingLoop:
         self.save_dir.mkdir(exist_ok=True)
         self.best_genome_ever: Genome | None = None
         self.best_fitness_ever: float = -float('inf')
+
+        # Shows a loading screen.
+        self.screen.fill((0, 0, 0))
+        draw_outlined_text(
+            self.screen,
+            "Loading...",
+            (GAME.SCREEN_WIDTH // 2, GAME.SCREEN_HEIGHT // 2),
+            text_colour=COLOURS.TEXT_SECONDARY
+        )
+
+        pygame.display.flip()
 
         # Loads the track.
         self.track: Track = Track(track_path)
@@ -368,13 +368,15 @@ class TrainingLoop:
         """
 
         # Dark background.
-        self.screen.fill(Color(25, 25, 35))
+        self.screen.fill(COLOURS.BACKGROUND)
 
         # Title text.
-        font = pygame.font.Font(None, 24)
-        text = font.render("Training Mode: Console Output", True, Color(150, 150, 150))
-        text_rect = text.get_rect(center=(200, 30))
-        self.screen.blit(text, text_rect)
+        draw_outlined_text(
+            self.screen,
+            "Training Mode: Console Output",
+            (GAME.SCREEN_WIDTH // 2, GAME.SCREEN_HEIGHT // 2 - 20),
+            text_colour=COLOURS.TEXT_SECONDARY
+        )
 
         # Toggle button.
         self.toggle_button.draw(self.screen)
@@ -443,7 +445,7 @@ class TrainingLoop:
         # Semi-transparent background.
         overlay = pygame.Surface((350, 180))
         overlay.set_alpha(200)
-        overlay.fill(Color(20, 20, 30))
+        overlay.fill(COLOURS.ITEM_UNSELECTED)
         self.screen.blit(overlay, (10, 10))
 
         # Stats.
