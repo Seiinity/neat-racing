@@ -59,7 +59,7 @@ class ListItem:
         draw_outlined_text(
             screen,
             indicator_text,
-            (text_position, self.rect.y + 10),
+            (text_position, self.rect.y + 9),
             align='left',
             font_size=FONTS.SIZE_NORMAL,
             text_colour=text_colour
@@ -69,7 +69,7 @@ class ListItem:
         draw_outlined_text(
             screen,
             self.text,
-            (text_position + 50, self.rect.y + 10),
+            (text_position + 50, self.rect.y + 9),
             align='left',
             font_size=FONTS.SIZE_NORMAL,
             text_colour=text_colour

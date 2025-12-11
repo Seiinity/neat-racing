@@ -108,7 +108,7 @@ class TrackSelector:
                 return result
 
             self._draw()
-            self.clock.tick(60)
+            self.clock.tick(GAME.FPS)
 
         return None
 
@@ -120,7 +120,8 @@ class TrackSelector:
         Returns
         -------
         str | None
-            The selected track if confirmed, ``None`` to continue.
+            The selected track if confirmed, ``None`` to continue,
+            'QUIT' to quit.
         """
 
         # Only updates items if the scroll state changed or items don't exist yet.
@@ -131,7 +132,7 @@ class TrackSelector:
         for event in pygame.event.get():
 
             if event.type == pygame.QUIT:
-                self.running = False
+                return 'QUIT'
 
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:

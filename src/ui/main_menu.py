@@ -75,7 +75,7 @@ class MainMenu:
         Returns
         -------
         str | None
-            The selected mode ('train', 'play'), or None if the menu was closed.
+            The selected mode ('train', 'play', 'QUIT'), or None if the menu was closed.
         """
 
         while self.running:
@@ -83,7 +83,7 @@ class MainMenu:
             self._process_events()
             self._draw()
 
-            self.clock.tick(60)
+            self.clock.tick(GAME.FPS)
 
             if self.selected_mode is not None:
                 break
@@ -100,10 +100,12 @@ class MainMenu:
 
             if event.type == pygame.QUIT:
                 self.running = False
+                self.selected_mode = 'QUIT'
 
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     self.running = False
+                    self.selected_mode = 'QUIT'
 
             # Handles button clicks.
             if self._train_button.handle_event(event):
@@ -114,6 +116,7 @@ class MainMenu:
 
             if self._quit_button.handle_event(event):
                 self.running = False
+                self.selected_mode = 'QUIT'
 
     def _draw(self) -> None:
 

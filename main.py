@@ -7,19 +7,23 @@ from src.ui import MainMenu, TrackSelector, GenomeSelector
 
 
 def main():
-
     while True:
 
+        # Main menu.
         menu = MainMenu()
         selected_mode = menu.run()
 
-        # Exits if no mode was selected (window closed or quit pressed).
-        if selected_mode is None:
+        # Exits if window closed or quit pressed.
+        if selected_mode is None or selected_mode == 'QUIT':
             break
 
         # Selects a track.
         track_selector = TrackSelector()
         selected_track = track_selector.run()
+
+        # Quits if X was clicked.
+        if selected_track == 'QUIT':
+            break
 
         # Returns to menu if track selection was cancelled.
         if selected_track is None:
@@ -32,7 +36,11 @@ def main():
                 save_interval=10,
                 save_best=True
             )
-            training.run()
+            result = training.run()
+
+            # Quits if X was clicked during training
+            if result == 'QUIT':
+                break
 
             print("Saving top 5 genomes...")
             GenomeIO.save_best_genomes(
@@ -45,7 +53,12 @@ def main():
         elif selected_mode == 'play':
 
             selector = GenomeSelector('./data/genomes')
+
             selected_genomes = selector.run()
+
+            # Quits if X was clicked.
+            if selected_genomes == 'QUIT':
+                break
 
             # Returns to menu if selection was cancelled.
             if selected_genomes is None or len(selected_genomes) == 0:
@@ -55,7 +68,12 @@ def main():
                 track_path=selected_track,
                 genome_paths=selected_genomes
             )
-            loop.run()
+
+            result = loop.run()
+
+            # Quits if X was clicked during gameplay
+            if result == 'QUIT':
+                break
 
     pygame.quit()
 

@@ -3,7 +3,7 @@ import pygame
 from pathlib import Path
 from pygame import Vector2, Surface
 from pygame.time import Clock
-from config import COLOURS, TRAINING, CAR, GAME
+from config import COLOURS, FONTS, TRAINING, CAR, GAME
 from src.algorithm import GeneticAlgorithm, Genome
 from src.io import GenomeIO
 from src.core.car import Car, Track
@@ -159,10 +159,15 @@ class TrainingLoop:
 
         print(f"\nGeneration {self.genetic_algorithm.generation} started.")
 
-    def run(self) -> None:
+    def run(self) -> str | None:
 
         """
         Runs the main training loop.
+
+        Returns
+        -------
+        str | None
+            'QUIT' if window was closed, ``None`` if ESC was pressed.
 
         Notes
         -----
@@ -174,7 +179,13 @@ class TrainingLoop:
 
             while self.running:
 
-                self._process_events()
+                result = self._process_events()
+
+                # If X button was clicked, return immediately
+                if result == 'QUIT':
+                    pygame.quit()
+                    return 'QUIT'
+
                 self._current_speed = 1 if self.visual_mode else TRAINING.SPEED
 
                 dt: float = self.clock.tick(GAME.FPS) / 1000.0
@@ -203,32 +214,45 @@ class TrainingLoop:
                     self._next_generation()
 
         except KeyboardInterrupt:
+
             print("\n" + "=" * 60)
             print("Training interrupted.")
             self._print_final_stats()
 
         pygame.quit()
+        return None
 
-    def _process_events(self) -> None:
+    def _process_events(self) -> str | None:
 
         """
         Processes all pending Pygame events.
+
+        Returns
+        -------
+        str | None
+            'QUIT' if X button clicked, None otherwise.
         """
 
         for event in pygame.event.get():
 
             if event.type == pygame.QUIT:
                 self.running = False
+                return 'QUIT'
 
             elif event.type == pygame.KEYDOWN:
+
                 if event.key == pygame.K_ESCAPE:
                     self.running = False
+                    return None
+
                 elif event.key == pygame.K_SPACE:
                     self._toggle_mode()
 
             # Handles button clicks.
             if self.toggle_button.handle_event(event):
                 self._toggle_mode()
+
+        return None
 
     def _toggle_mode(self) -> None:
 
@@ -432,6 +456,7 @@ class TrainingLoop:
         time_remaining = max(0, TRAINING.MAX_GENERATION_TIME - self._generation_timer)
 
         if self.controllers:
+
             fitness_values = [c.fitness for c in self.controllers]
             best_fitness = max(fitness_values)
             avg_fitness = sum(fitness_values) / len(fitness_values)
@@ -439,6 +464,7 @@ class TrainingLoop:
             best_controller = max(self.controllers, key=lambda c: c.fitness)
             best_car = best_controller.car
         else:
+
             best_fitness = avg_fitness = 0
             best_car = None
 
@@ -452,40 +478,40 @@ class TrainingLoop:
         y = 20
         draw_outlined_text(
             self.screen, f"Generation: {self.genetic_algorithm.generation}",
-            (20, y), align="left", font_size=20
+            (20, y), align="left", font_size=FONTS.SIZE_NORMAL
         )
 
-        y += 30
+        y += 25
         draw_outlined_text(
             self.screen, f"Alive: {alive_count}/{TRAINING.POPULATION_SIZE}",
-            (20, y), align="left", font_size=20
+            (20, y), align="left", font_size=FONTS.SIZE_NORMAL
         )
 
-        y += 30
+        y += 25
         draw_outlined_text(
             self.screen, f"Time: {time_remaining:.1f}s / {TRAINING.MAX_GENERATION_TIME:.0f}s",
-            (20, y), align="left", font_size=20
+            (20, y), align="left", font_size=FONTS.SIZE_NORMAL
         )
 
-        y += 30
+        y += 25
         draw_outlined_text(
             self.screen, f"Best Fitness: {best_fitness:.0f}",
-            (20, y), align="left", font_size=20
+            (20, y), align="left", font_size=FONTS.SIZE_NORMAL
         )
 
-        y += 30
+        y += 25
         draw_outlined_text(
             self.screen, f"Avg Fitness: {avg_fitness:.0f}",
-            (20, y), align="left", font_size=20
+            (20, y), align="left", font_size=FONTS.SIZE_NORMAL
         )
 
         if best_car:
-            y += 30
+            y += 25
             draw_outlined_text(
                 self.screen,
                 f"Best CP: {best_car.current_checkpoint}/{self._num_checkpoints} | "
                 f"Laps: {best_car.laps_completed}",
-                (20, y), align="left", font_size=18
+                (20, y), align="left", font_size=FONTS.SIZE_NORMAL
             )
 
     def _is_generation_complete(self) -> bool:

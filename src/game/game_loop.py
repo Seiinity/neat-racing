@@ -92,15 +92,25 @@ class GameLoop:
 
             self.ai_controllers.append(controller)
 
-    def run(self) -> None:
+    def run(self) -> str | None:
 
         """
         Runs the main game loop until the window is closed.
+
+        Returns
+        -------
+        str | None
+            'QUIT' if window was closed, ``None`` if ESC was pressed.
         """
 
         while self.running:
 
-            self._process_events()
+            result = self._process_events()
+
+            # If X button was clicked, return immediately
+            if result == 'QUIT':
+                pygame.quit()
+                return 'QUIT'
 
             dt: float = self.clock.tick(GAME.FPS) / 1000.0
             self.accumulator += dt
@@ -113,16 +123,31 @@ class GameLoop:
             self._draw()
 
         pygame.quit()
+        return None
 
-    def _process_events(self) -> None:
+    def _process_events(self) -> str | None:
 
         """
         Processes all pending Pygame events.
+
+        Returns
+        -------
+        str | None
+            'QUIT' if X button clicked, ``None`` otherwise.
         """
 
         for event in pygame.event.get():
+
             if event.type == pygame.QUIT:
                 self.running = False
+                return 'QUIT'
+
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    self.running = False
+                    return None
+
+        return None
 
     def _update(self, dt: float) -> None:
 

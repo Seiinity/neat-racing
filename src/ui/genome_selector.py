@@ -139,19 +139,20 @@ class GenomeSelector:
                 return result
 
             self._draw()
-            self.clock.tick(60)
+            self.clock.tick(GAME.FPS)
 
         return None
 
-    def _process_events(self) -> list[str] | None:
+    def _process_events(self) -> list[str] | str | None:
 
         """
         Processes all pending Pygame events.
 
         Returns
         -------
-        list[str] | None
-            The selected genomes if start was pressed, None to continue.
+        list[str] | str | None
+            The selected genomes if start was pressed, None to continue,
+            'QUIT' to quit.
         """
 
         # Only updates items if the scroll state changed or items don't exist yet.
@@ -162,7 +163,7 @@ class GenomeSelector:
         for event in pygame.event.get():
 
             if event.type == pygame.QUIT:
-                self.running = False
+                return 'QUIT'
 
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
