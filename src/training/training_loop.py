@@ -61,6 +61,16 @@ class TrainingLoop:
 
         pygame.display.set_caption("NEAT-ish Racing - Training")
 
+        # Shows a loading screen.
+        self.screen.fill((0, 0, 0))
+        draw_outlined_text(
+            self.screen,
+            "Loading...",
+            (GAME.SCREEN_WIDTH // 2, GAME.SCREEN_HEIGHT // 2)
+        )
+
+        pygame.display.flip()
+
         # Starts in console mode for maximum performance.
         self.visual_mode: bool = False
 

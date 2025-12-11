@@ -8,6 +8,7 @@ from config import GAME
 from src.training import AIController
 from src.io import GenomeIO
 from src.core import Car, Events, Track
+from src.core.utils import draw_outlined_text
 from .input_handler import InputHandler
 
 
@@ -46,6 +47,16 @@ class GameLoop:
         self.accumulator: float = 0.0
 
         pygame.display.set_caption("NEAT-ish Racing")
+
+        # Shows a loading screen.
+        self.screen.fill((0, 0, 0))
+        draw_outlined_text(
+            self.screen,
+            "Loading...",
+            (GAME.SCREEN_WIDTH // 2, GAME.SCREEN_HEIGHT // 2)
+        )
+
+        pygame.display.flip()
 
         # Loads the track.
         self.track: Track = Track(track_path)
