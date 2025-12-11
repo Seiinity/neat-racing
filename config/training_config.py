@@ -12,6 +12,8 @@ class TrainingConfig:
     MAX_GENERATION_TIME: float = 30.0
     SPEED: int = 10
     INTERVAL: int = 4
+    SAVE_AMOUNT: int = 10
+    AUTOSAVE_INTERVAL: int = 25
 
 
 @dataclass(frozen=True)

@@ -48,7 +48,7 @@ class TrainingLoop:
             self,
             track_path: str,
             genome: Genome | None = None,
-            save_interval: int = 10,
+            save_interval: int = TRAINING.AUTOSAVE_INTERVAL,
             save_best: bool = True
     ) -> None:
 
@@ -67,10 +67,19 @@ class TrainingLoop:
         # Creates the toggle button.
         self.toggle_button = Button(
             x=(GAME.SCREEN_WIDTH // 2) - 100,
-            y=GAME.SCREEN_HEIGHT // 2,
+            y=GAME.SCREEN_HEIGHT // 2 - 20,
             width=200,
             height=40,
             text="Show Training"
+        )
+
+        # Creates the stop button.
+        self.stop_button = Button(
+            x=(GAME.SCREEN_WIDTH // 2) - 100,
+            y=GAME.SCREEN_HEIGHT // 2 + 25,
+            width=200,
+            height=40,
+            text="Stop Training"
         )
 
         # Genome saving configuration.
@@ -252,6 +261,10 @@ class TrainingLoop:
             if self.toggle_button.handle_event(event):
                 self._toggle_mode()
 
+            if self.stop_button.handle_event(event):
+                self.running = False
+                return None
+
         return None
 
     def _toggle_mode(self) -> None:
@@ -269,17 +282,15 @@ class TrainingLoop:
 
         if self.visual_mode:
 
-            # Switches to large window for visual mode.
-            self.screen = pygame.display.set_mode((1280, 720))
-            self.toggle_button.rect.topleft = (1280 - 220, 20)
+            self.toggle_button.rect.topleft = (GAME.SCREEN_WIDTH - 220, 20)
             self.toggle_button.text = "Hide Training"
+            self.stop_button.rect.topleft = (GAME.SCREEN_WIDTH - 220, 65)
 
         else:
 
-            # Switches back to small window for console mode.
-            self.screen = pygame.display.set_mode((400, 100))
-            self.toggle_button.rect.topleft = (125, 50)
+            self.toggle_button.rect.center = ((GAME.SCREEN_WIDTH // 2), GAME.SCREEN_HEIGHT // 2 - 20)
             self.toggle_button.text = "Show Training"
+            self.stop_button.rect.center = ((GAME.SCREEN_WIDTH // 2), GAME.SCREEN_HEIGHT // 2 + 25)
 
     def _fixed_update(self, dt: float) -> None:
 
@@ -398,12 +409,13 @@ class TrainingLoop:
         draw_outlined_text(
             self.screen,
             "Training Mode: Console Output",
-            (GAME.SCREEN_WIDTH // 2, GAME.SCREEN_HEIGHT // 2 - 20),
+            (GAME.SCREEN_WIDTH // 2, GAME.SCREEN_HEIGHT // 2 - 45),
             text_colour=COLOURS.TEXT_SECONDARY
         )
 
-        # Toggle button.
+        # Draws the buttons.
         self.toggle_button.draw(self.screen)
+        self.stop_button.draw(self.screen)
 
         pygame.display.flip()
 
@@ -436,8 +448,9 @@ class TrainingLoop:
         # Draws stats overlay.
         self._draw_visual_stats_overlay()
 
-        # Draws toggle button.
+        # Draws the buttons.
         self.toggle_button.draw(self.screen)
+        self.stop_button.draw(self.screen)
 
         pygame.display.flip()
 
@@ -581,25 +594,14 @@ class TrainingLoop:
         print(f"  Best Laps:        {best_car.laps_completed}")
         print(f"  Generation Time:  {self._generation_timer:.2f}s")
 
-        # Saves best genome ever.
-        if self.save_best and max_fitness > self.best_fitness_ever:
-
-            self.best_fitness_ever = max_fitness
-            self.best_genome_ever = self.genetic_algorithm.get_top(1)[0].copy()
-
-            filename = self.save_dir / f"best_gen_{gen_num}_fitness_{max_fitness:.0f}.pkl"
-            GenomeIO.save_genome(self.best_genome_ever, str(filename))
-
-            print(f"  New best genome saved: {filename.name}")
-
         # Periodic autosave.
         if gen_num % self.save_interval == 0 and gen_num > 0:
 
-            top_genomes = self.genetic_algorithm.get_top(3)
-
-            for i, genome in enumerate(top_genomes):
-                filename = self.save_dir / f"gen_{gen_num}_rank_{i + 1}.pkl"
-                GenomeIO.save_genome(genome, str(filename))
+            GenomeIO.save_best_genomes(
+                self.genetic_algorithm,
+                num_best=TRAINING.SAVE_AMOUNT,
+                directory='./data/genomes'
+            )
 
             print(f"  Autosaved top 3 genomes for generation {gen_num}.")
 

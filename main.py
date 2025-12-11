@@ -1,5 +1,6 @@
 ﻿import pygame
 
+from config import TRAINING
 from src.training import TrainingLoop
 from src.io import GenomeIO
 from src.game import GameLoop
@@ -7,6 +8,7 @@ from src.ui import MainMenu, TrackSelector, GenomeSelector
 
 
 def main():
+
     while True:
 
         # Main menu.
@@ -36,24 +38,26 @@ def main():
                 save_interval=10,
                 save_best=True
             )
+
             result = training.run()
 
-            # Quits if X was clicked during training
+            # Quits if X was clicked during training.
             if result == 'QUIT':
                 break
 
             print("Saving top 5 genomes...")
+
             GenomeIO.save_best_genomes(
                 training.genetic_algorithm,
-                num_best=5,
+                num_best=TRAINING.SAVE_AMOUNT,
                 directory='./data/genomes'
             )
+
             print("Training complete.")
 
         elif selected_mode == 'play':
 
             selector = GenomeSelector('./data/genomes')
-
             selected_genomes = selector.run()
 
             # Quits if X was clicked.
@@ -71,7 +75,7 @@ def main():
 
             result = loop.run()
 
-            # Quits if X was clicked during gameplay
+            # Quits if X was clicked during gameplay.
             if result == 'QUIT':
                 break
 
