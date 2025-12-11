@@ -1,59 +1,63 @@
-﻿from algorithm.training_loop import TrainingLoop
-from algorithm.genome_io import GenomeIO
-from game.game_loop import GameLoop
+﻿import pygame
+
+from src.training import TrainingLoop
+from src.io import GenomeIO
+from src.game import GameLoop
+from src.ui import MainMenu, TrackSelector, GenomeSelector
 
 
 def main():
 
     while True:
 
-        print("\nSelect mode:")
-        print("  1 - Train AI using genetic algorithms")
-        print("  2 - Train AI continuing from best")
-        print("  3 - Play manually")
-        choice = input("Enter mode (1 or 2): ").strip()
+        menu = MainMenu()
+        selected_mode = menu.run()
 
-        if choice == '1':
+        # Exits if no mode was selected (window closed or quit pressed).
+        if selected_mode is None:
+            break
 
-            print("\n=== AI Training Mode ===\n")
+        # Selects a track.
+        track_selector = TrackSelector()
+        selected_track = track_selector.run()
 
-            training = TrainingLoop()
+        # Returns to menu if track selection was cancelled.
+        if selected_track is None:
+            continue
+
+        if selected_mode == 'train':
+
+            training = TrainingLoop(
+                track_path=selected_track,
+                save_interval=10,
+                save_best=True
+            )
             training.run()
 
-            print("\nSaving top 5 genomes...")
+            print("Saving top 5 genomes...")
             GenomeIO.save_best_genomes(
                 training.genetic_algorithm,
                 num_best=5,
-                directory='./saved_genomes'
+                directory='./data/genomes'
             )
-            print("\nTraining complete!")
-            break
+            print("Training complete.")
 
-        if choice == '2':
+        elif selected_mode == 'play':
 
-            print("\n=== AI Training Mode - From Best ===\n")
+            selector = GenomeSelector('./data/genomes')
+            selected_genomes = selector.run()
 
-            training = TrainingLoop(GenomeIO.load_genome('./saved_genomes/genome_gen2_rank1.pkl'))
-            training.run()
+            # Returns to menu if selection was cancelled.
+            if selected_genomes is None or len(selected_genomes) == 0:
+                continue
 
-            print("\nSaving top 5 genomes...")
-            GenomeIO.save_best_genomes(
-                training.genetic_algorithm,
-                num_best=5,
-                directory='./saved_genomes'
+            loop = GameLoop(
+                track_path=selected_track,
+                genome_paths=selected_genomes
             )
-            print("\nTraining complete!")
-            break
+            loop.run()
 
-        elif choice == '3':
-
-            print("\n=== Manual Play Mode ===\n")
-            game_loop = GameLoop()
-            game_loop.run()
-            break
-
-        else:
-            print("Invalid choice. Please enter 1 or 2.")
+    pygame.quit()
 
 
 if __name__ == "__main__":
