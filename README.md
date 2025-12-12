@@ -65,23 +65,23 @@ python main.py
 
 ```
 neat-racing/
-├── config/                  # Configuration files.
-│   ├── algorithm_config.py  # Genetic algorithm parameters.
-│   ├── game_config.py       # Display and physics settings.
-│   ├── render_config.py     # Colours and fonts.
-│   └── training_config.py   # Training parameters.
+├── config/                        # Configuration files.
+│   ├── algorithm_config.py        # Genetic algorithm parameters.
+│   ├── game_config.py             # Display and physics settings.
+│   ├── render_config.py           # Colours and fonts.
+│   └── training_config.py         # Training parameters.
 ├── data/
-│   ├── fonts/               # Custom fonts.
-│   ├── genomes/             # Saved neural network genomes.
-│   └── tracks/              # Track files (.tmx) and images.
+│   ├── fonts/                     # Custom fonts.
+│   ├── genomes/                   # Saved neural network genomes.
+│   └── tracks/                    # Track files (.tmx) and images.
 ├── src/
-│   ├── algorithm/           # Neural network and genetic algorithm.
-│   ├── core/                # Car, track, and event system.
-│   ├── game/                # Game loop and input handling.
-│   ├── io/                  # Genome serialisation.
-│   ├── training/            # Training loop and AI controller.
-│   └── ui/                  # Menus, buttons, and plotting.
-└── main.py                  # Entry point.
+│   ├── algorithm/                 # Neural network and genetic algorithm.
+│   ├── core/                      # Car, track, and event system.
+│   ├── game/                      # Game loop and input handling.
+│   ├── io/                        # Genome serialisation.
+│   ├── training/                  # Training loop and AI controller.
+│   └── ui/                        # Menus, buttons, and plotting.
+└── main.py                        # Entry point.
 ```
 
 ## How It Works
