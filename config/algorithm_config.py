@@ -37,8 +37,9 @@ class GeneticConfig:
     """
 
     ELITISM_CUTOFF: int = 5
+    TOURNAMENT_SIZE: float = 1
 
 
-GENOME = GenomeConfig()
-MUTATION = MutationConfig()
-GENETIC = GeneticConfig()
+GENOME: GenomeConfig = GenomeConfig()
+MUTATION: MutationConfig = MutationConfig()
+GENETIC: GeneticConfig = GeneticConfig()

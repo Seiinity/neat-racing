@@ -34,9 +34,7 @@ def main():
         if selected_mode == 'train':
 
             training = TrainingLoop(
-                track_path=selected_track,
-                save_interval=10,
-                save_best=True
+                track_path=selected_track
             )
 
             result = training.run()

@@ -10,7 +10,7 @@ class TrainingConfig:
 
     POPULATION_SIZE: int = 50
     MAX_GENERATION_TIME: float = 30.0
-    SPEED: int = 10
+    SPEED: int = 20
     INTERVAL: int = 4
     SAVE_AMOUNT: int = 10
     AUTOSAVE_INTERVAL: int = 25
@@ -33,5 +33,5 @@ class FitnessConfig:
     PENALTY_TIME: float = -200.0
 
 
-TRAINING = TrainingConfig()
-FITNESS = FitnessConfig()
+TRAINING: TrainingConfig = TrainingConfig()
+FITNESS: FitnessConfig = FitnessConfig()

@@ -1,6 +1,7 @@
 import pygame
 
 from pygame import Color, Surface, Rect
+from pygame.font import Font
 from pytmx import TiledElement, TiledMap
 from config import COLOURS, FONTS
 
@@ -15,6 +16,7 @@ def draw_outlined_text(
         font_size: int = FONTS.SIZE_NORMAL,
         align: str = "centre"
 ) -> None:
+
     """
     Draws text with an outline at a given position.
 
@@ -39,13 +41,13 @@ def draw_outlined_text(
     """
 
     # Default font.
-    font = pygame.font.Font(FONTS.PATH, font_size)
+    font: Font = Font(FONTS.PATH, font_size)
 
     # Renders the surfaces.
-    outline_surf = font.render(text, True, outline_colour)
-    text_surf = font.render(text, True, text_colour)
+    outline_surf: Surface = font.render(text, True, outline_colour)
+    text_surf: Surface = font.render(text, True, text_colour)
 
-    # Defines a rect function based on alignment.
+    # Defines a get_rect function based on alignment.
     def get_rect(surf: Surface, position: tuple[int, int]) -> Rect:
         if align == "left":
             return surf.get_rect(topleft=position)

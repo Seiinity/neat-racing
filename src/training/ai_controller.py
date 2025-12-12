@@ -4,7 +4,7 @@ from numpy.typing import NDArray
 from pygame import Color, Surface
 from config import FITNESS
 from src.algorithm import Genome, NeuralNetwork
-from src.core import Car
+from src.core import Car, Events
 
 
 class AIController:
@@ -22,6 +22,25 @@ class AIController:
         The fitness of the genome.
     is_alive : bool
         Whether the controller is currently alive or not.
+    time_alive : float
+        Time spent alive, in seconds.
+
+    Methods
+    -------
+    handle_checkpoint_hit(checkpoint_order: int, total_checkpoints: int) -> None
+        Handles checkpoint hits.
+    handle_finish_line(total_checkpoints: int) -> None
+        Handles finish line crossing.
+    kill() -> None
+        Kills the AI controller.
+    make_decision(dt: float) -> None
+        Makes a decision regarding what actions to take.
+    fixed_update() -> None
+        Updates the AI controller.
+    draw(screen: Surface, is_best: bool = False, is_worst: bool = False) -> None
+        Draws the AI-controlled car.
+    dispose() -> None
+        Liberates the AI controller for garbage collection.
     """
 
     def __init__(self, car: Car, genome: Genome) -> None:
@@ -30,9 +49,9 @@ class AIController:
         self.genome: Genome = genome
         self.fitness: float = 0.0
         self.is_alive: bool = True
+        self.time_alive: float = 0.0
 
         self._network: NeuralNetwork = NeuralNetwork.from_genome(genome)
-        self._time_alive: float = 0.0
         self._total_distance: float = 0.0
         self._wrong_checkpoints: int = 0
         self._current_actions: tuple[bool, bool, int] = (False, False, 0)
@@ -64,10 +83,10 @@ class AIController:
 
         # Calculates the circular "distance" between checkpoints.
         # Note: current_checkpoint was already incremented if correct, so we check against previous.
-        expected = self.car.current_checkpoint - 1 if self.car.current_checkpoint > 0 else 0
-        forward_dist = (checkpoint_order - expected) % total_checkpoints
-        backward_dist = (expected - checkpoint_order) % total_checkpoints
-        min_dist = min(forward_dist, backward_dist)
+        expected: int = self.car.current_checkpoint - 1 if self.car.current_checkpoint > 0 else 0
+        forward_dist: int = (checkpoint_order - expected) % total_checkpoints
+        backward_dist: int = (expected - checkpoint_order) % total_checkpoints
+        min_dist: int = min(forward_dist, backward_dist)
 
         # Only penalises if 2+ checkpoints away.
         if min_dist >= 2:
@@ -89,7 +108,7 @@ class AIController:
     def kill(self) -> None:
 
         """
-        Kills this AI controller.
+        Kills the AI controller.
 
         Notes
         -------
@@ -118,7 +137,7 @@ class AIController:
         if not self.is_alive:
             return
 
-        self._time_alive += dt
+        self.time_alive += dt
 
         # Tracks total distance (only forward movement counts).
         if self.car.velocity > 0:
@@ -126,7 +145,7 @@ class AIController:
 
         # Runs the neural network.
         inputs: NDArray[float] = np.array(self.car.sensor_distances)
-        outputs = self._network.forward(inputs)
+        outputs: NDArray[float] = self._network.forward(inputs)
 
         # Retrieves the acceleration and braking probabilities.
         accel_prob: float = outputs[0]
@@ -157,7 +176,15 @@ class AIController:
 
         # Applies the AI's decisions.
         accelerate, brake, turn = self._current_actions
-        self.car.set_ai_controls(accelerate, brake, turn)
+
+        if accelerate:
+            Events.on_keypress_accelerate.broadcast(data=self.car)
+
+        if brake:
+            Events.on_keypress_brake.broadcast(data=self.car)
+
+        if turn != 0:
+            Events.on_keypress_turn.broadcast(data=(self.car, turn))
 
     def _calculate_fitness(self) -> None:
 
@@ -172,26 +199,26 @@ class AIController:
         """
 
         # Rewards distance travelled.
-        distance_score = self._total_distance * FITNESS.REWARD_DISTANCE
+        distance_score: float = self._total_distance * FITNESS.REWARD_DISTANCE
 
         # Rewards moving forward and penalises moving backward.
-        checkpoint_score = (
+        checkpoint_score: float = (
             self.car.current_checkpoint * FITNESS.REWARD_CHECKPOINT +
             self._wrong_checkpoints * FITNESS.PENALTY_WRONG_CHECKPOINT
         )
 
         # Rewards completing laps.
-        lap_score = self.car.laps_completed * FITNESS.REWARD_LAP
+        lap_score: float = self.car.laps_completed * FITNESS.REWARD_LAP
 
         # Rewards staying away from walls.
-        avg_sensor_distance = np.mean(self.car.sensor_distances)
-        safety_score = avg_sensor_distance * FITNESS.REWARD_SAFETY
+        avg_sensor_distance: float = float(np.mean(self.car.sensor_distances))
+        safety_score: float = avg_sensor_distance * FITNESS.REWARD_SAFETY
 
         # Rewards maintaining speed.
-        velocity_score = max(0.0, self.car.velocity) * FITNESS.REWARD_VELOCITY
+        velocity_score: float = max(0.0, self.car.velocity) * FITNESS.REWARD_VELOCITY
 
         # Time alive is penalised to prevent cars from driving aimlessly.
-        survival_score = self._time_alive * FITNESS.PENALTY_TIME
+        survival_score: float = self.time_alive * FITNESS.PENALTY_TIME
 
         self.fitness = (
             distance_score +
@@ -211,10 +238,10 @@ class AIController:
         -----
         The cars with the absolute lowest fitness scores are drawn
         in red. The cars with the absolute highest fitness scores are
-        drawn in green. All other cars are drawn in white.
+        drawn in green. All other cars are drawn in their default colour.
         """
 
-        colour: Color = Color(255, 255, 255)
+        colour: Color | None = None
 
         if is_best:
             colour = Color(0, 255, 0)

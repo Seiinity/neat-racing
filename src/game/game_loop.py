@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import pygame
 
-from pygame import Surface
+from pygame import Surface, Vector2
 from pygame.time import Clock
 from config import GAME, COLOURS
+from src.algorithm import Genome
 from src.training import AIController
 from src.io import GenomeIO
 from src.core import Car, Events, Track
@@ -21,37 +22,27 @@ class GameLoop:
     for non-physics updates and drawing. The player races against
     AI-controlled opponents loaded from genome files.
 
-    Attributes
-    ----------
-    screen : Surface
-        The main screen for rendering.
-    clock : Clock
-        A clock used to manage frame rate.
-    running : bool
-        Whether the game loop is currently active.
-    accumulator : float
-        A time accumulator for fixed-timestep updates.
-    player_car : Car
-        The player-controlled car.
-    ai_controllers : list[AIController]
-        A list of AI controllers for the opponent cars.
+    Methods
+    -------
+    run() -> str | None
+        Runs the game loop.
     """
 
     def __init__(self, track_path: str, genome_paths: list[str]) -> None:
 
         pygame.init()
 
-        self.screen: Surface = pygame.display.set_mode((GAME.SCREEN_WIDTH, GAME.SCREEN_HEIGHT))
-        self.clock: Clock = Clock()
-        self.running: bool = True
-        self.accumulator: float = 0.0
+        self._screen: Surface = pygame.display.set_mode((GAME.SCREEN_WIDTH, GAME.SCREEN_HEIGHT))
+        self._clock: Clock = Clock()
+        self._running: bool = True
+        self._accumulator: float = 0.0
 
         pygame.display.set_caption("NEAT-ish Racing")
 
         # Shows a loading screen.
-        self.screen.fill((0, 0, 0))
+        self._screen.fill((0, 0, 0))
         draw_outlined_text(
-            self.screen,
+            self._screen,
             "Loading...",
             (GAME.SCREEN_WIDTH // 2, GAME.SCREEN_HEIGHT // 2),
             text_colour=COLOURS.TEXT_SECONDARY
@@ -59,17 +50,15 @@ class GameLoop:
 
         pygame.display.flip()
 
-        # Loads the track.
-        self.track: Track = Track(track_path)
-
-        # Caches the number of checkpoints to avoid repeated lookups.
-        self._num_checkpoints: int = len(self.track.checkpoints)
+        # Loads the track - takes time!
+        self._track: Track = Track(track_path)
+        self._num_checkpoints: int = len(self._track.checkpoints)
 
         # Creates the player car at the player start position.
-        self.player_car: Car = Car(start_pos=self.track.player_start_position)
+        self._player_car: Car = Car(start_pos=self._track.player_start_position)
 
         # Loads AI opponents from genome files.
-        self.ai_controllers: list[AIController] = []
+        self._ai_controllers: list[AIController] = []
         self._load_ai_opponents(genome_paths)
 
     def _load_ai_opponents(self, genome_paths: list[str]) -> None:
@@ -85,12 +74,12 @@ class GameLoop:
 
         for i, path in enumerate(genome_paths):
 
-            genome = GenomeIO.load_genome(path)
-            start_pos = self.track.start_positions[i % len(self.track.start_positions)]
-            car = Car(start_pos=start_pos)
-            controller = AIController(car, genome)
+            genome: Genome = GenomeIO.load_genome(path)
+            start_pos: Vector2 = self._track.start_positions[i % len(self._track.start_positions)]
+            car: Car = Car(start_pos=start_pos, colour=COLOURS.CARS[i])
+            controller: AIController = AIController(car, genome)
 
-            self.ai_controllers.append(controller)
+            self._ai_controllers.append(controller)
 
     def run(self) -> str | None:
 
@@ -103,21 +92,25 @@ class GameLoop:
             'QUIT' if window was closed, ``None`` if ESC was pressed.
         """
 
-        while self.running:
+        while self._running:
 
-            result = self._process_events()
+            result: str | None = self._process_events()
 
-            # If X button was clicked, return immediately
+            # If X button was clicked, returns immediately.
             if result == 'QUIT':
+
                 pygame.quit()
                 return 'QUIT'
 
-            dt: float = self.clock.tick(GAME.FPS) / 1000.0
-            self.accumulator += dt
+            # Calculates delta time and adds to the fixed accumulator.
+            dt: float = self._clock.tick(GAME.FPS) / 1000.0
+            self._accumulator += dt
 
-            while self.accumulator >= GAME.FIXED_DT:
+            # Fixed timestep loop for deterministic physics.
+            while self._accumulator >= GAME.FIXED_DT:
+
                 self._fixed_update(GAME.FIXED_DT)
-                self.accumulator -= GAME.FIXED_DT
+                self._accumulator -= GAME.FIXED_DT
 
             self._update(dt)
             self._draw()
@@ -139,12 +132,12 @@ class GameLoop:
         for event in pygame.event.get():
 
             if event.type == pygame.QUIT:
-                self.running = False
+                self._running = False
                 return 'QUIT'
 
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
-                    self.running = False
+                    self._running = False
                     return None
 
         return None
@@ -160,18 +153,16 @@ class GameLoop:
             Time since the last frame, in seconds.
         """
 
-        InputHandler.update()
-
         # Updates player sensors.
-        self.player_car.update_sensors(self.track)
+        self._player_car.update_sensors(self._track)
 
         # Updates AI sensors and decisions.
-        for controller in self.ai_controllers:
+        for controller in self._ai_controllers:
 
             if not controller.is_alive:
                 continue
 
-            controller.car.update_sensors(self.track)
+            controller.car.update_sensors(self._track)
             controller.make_decision(dt)
 
     def _fixed_update(self, dt: float) -> None:
@@ -186,11 +177,14 @@ class GameLoop:
         """
 
         # Updates the player car.
-        self.player_car.fixed_update(dt)
+        self._player_car.fixed_update(dt)
         self._handle_player_collisions()
 
+        # Updates player input.
+        InputHandler.fixed_update(self._player_car)
+
         # Updates AI cars.
-        for controller in self.ai_controllers:
+        for controller in self._ai_controllers:
 
             if not controller.is_alive:
                 continue
@@ -206,24 +200,24 @@ class GameLoop:
         """
 
         # Checks for collisions with the track bounds.
-        if self.player_car.check_track_collision(self.track):
-            Events.on_car_collided.broadcast(data=(self.player_car, self.track))
+        if self._player_car.check_track_collision(self._track):
+            Events.on_car_collided.broadcast(data=(self._player_car, self._track))
 
-        # Checks for checkpoint crossing.
-        checkpoint_order: int = self.track.check_checkpoint(
-            self.player_car.position.x,
-            self.player_car.position.y
+        checkpoint_order: int = self._track.check_checkpoint(
+            self._player_car.position.x,
+            self._player_car.position.y
         )
 
+        # Checks for checkpoint crossing.
         if checkpoint_order >= 0:
             Events.on_checkpoint_hit.broadcast(
-                data=(self.player_car, checkpoint_order, self._num_checkpoints)
+                data=(self._player_car, checkpoint_order, self._num_checkpoints)
             )
 
         # Checks for finish line crossing.
-        if self.player_car.rect.colliderect(self.track.finish_line):
+        if self._player_car.rect.colliderect(self._track.finish_line):
             Events.on_finish_line_crossed.broadcast(
-                data=(self.player_car, self._num_checkpoints)
+                data=(self._player_car, self._num_checkpoints)
             )
 
     def _handle_ai_collisions(self, controller: AIController) -> None:
@@ -240,18 +234,18 @@ class GameLoop:
         car = controller.car
 
         # Checks for collisions with the track bounds.
-        if car.check_track_collision(self.track):
+        if car.check_track_collision(self._track):
             controller.kill()
             return
 
         # Checks for checkpoint crossing.
-        checkpoint_order: int = self.track.check_checkpoint(car.position.x, car.position.y)
+        checkpoint_order: int = self._track.check_checkpoint(car.position.x, car.position.y)
 
         if checkpoint_order >= 0:
             controller.handle_checkpoint_hit(checkpoint_order, self._num_checkpoints)
 
         # Checks for finish line crossing.
-        if car.rect.colliderect(self.track.finish_line):
+        if car.rect.colliderect(self._track.finish_line):
             controller.handle_finish_line(self._num_checkpoints)
 
     def _draw(self) -> None:
@@ -260,13 +254,14 @@ class GameLoop:
         Draws all the visible game elements on the screen.
         """
 
-        self.track.draw(self.screen)
+        # Draws the track.
+        self._track.draw(self._screen)
 
-        # Draws the player car in a distinct colour.
-        self.player_car.draw(self.screen, pygame.Color(0, 200, 255))
+        # Draws the player car.
+        self._player_car.draw(self._screen)
 
-        # Draws AI cars.
-        for controller in self.ai_controllers:
-            controller.draw(self.screen)
+        # Draws the AI cars.
+        for controller in self._ai_controllers:
+            controller.draw(self._screen)
 
         pygame.display.flip()

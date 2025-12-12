@@ -11,27 +11,16 @@ class MainMenu:
 
     """
     Main menu screen with clickable options.
-
-    Attributes
-    ----------
-    screen : Surface
-        The Pygame display surface.
-    clock : Clock
-        The Pygame clock for timing.
-    running : bool
-        Whether the menu is currently running.
-    selected_mode : str | None
-        The mode selected by the user, or None if not yet selected.
     """
 
     def __init__(self) -> None:
 
         pygame.init()
 
-        self.screen: Surface = pygame.display.set_mode((GAME.SCREEN_WIDTH, GAME.SCREEN_HEIGHT))
-        self.clock: Clock = Clock()
-        self.running: bool = True
-        self.selected_mode: str | None = None
+        self._screen: Surface = pygame.display.set_mode((GAME.SCREEN_WIDTH, GAME.SCREEN_HEIGHT))
+        self._clock: Clock = Clock()
+        self._running: bool = True
+        self._selected_mode: str | None = None
 
         pygame.display.set_caption("NEAT-ish Racing")
 
@@ -78,17 +67,17 @@ class MainMenu:
             The selected mode ('train', 'play', 'QUIT'), or None if the menu was closed.
         """
 
-        while self.running:
+        while self._running:
 
             self._process_events()
             self._draw()
 
-            self.clock.tick(GAME.FPS)
+            self._clock.tick(GAME.FPS)
 
-            if self.selected_mode is not None:
+            if self._selected_mode is not None:
                 break
 
-        return self.selected_mode
+        return self._selected_mode
 
     def _process_events(self) -> None:
 
@@ -99,24 +88,23 @@ class MainMenu:
         for event in pygame.event.get():
 
             if event.type == pygame.QUIT:
-                self.running = False
-                self.selected_mode = 'QUIT'
+                self._running = False
+                self._selected_mode = 'QUIT'
 
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
-                    self.running = False
-                    self.selected_mode = 'QUIT'
+                    self._running = False
+                    self._selected_mode = 'QUIT'
 
-            # Handles button clicks.
             if self._train_button.handle_event(event):
-                self.selected_mode = 'train'
+                self._selected_mode = 'train'
 
             if self._play_button.handle_event(event):
-                self.selected_mode = 'play'
+                self._selected_mode = 'play'
 
             if self._quit_button.handle_event(event):
-                self.running = False
-                self.selected_mode = 'QUIT'
+                self._running = False
+                self._selected_mode = 'QUIT'
 
     def _draw(self) -> None:
 
@@ -125,11 +113,11 @@ class MainMenu:
         """
 
         # Background.
-        self.screen.fill(COLOURS.BACKGROUND)
+        self._screen.fill(COLOURS.BACKGROUND)
 
         # Title.
         draw_outlined_text(
-            self.screen,
+            self._screen,
             "NEAT-ish Racing",
             (GAME.SCREEN_WIDTH // 2, 150),
             font_size=FONTS.SIZE_XL
@@ -137,7 +125,7 @@ class MainMenu:
 
         # Subtitle.
         draw_outlined_text(
-            self.screen,
+            self._screen,
             "A Neuroevolution Racing Game",
             (GAME.SCREEN_WIDTH // 2, 190),
             font_size=FONTS.SIZE_LARGE,
@@ -145,13 +133,13 @@ class MainMenu:
         )
 
         # Buttons.
-        self._train_button.draw(self.screen)
-        self._play_button.draw(self.screen)
-        self._quit_button.draw(self.screen)
+        self._train_button.draw(self._screen)
+        self._play_button.draw(self._screen)
+        self._quit_button.draw(self._screen)
 
         # Footer.
         draw_outlined_text(
-            self.screen,
+            self._screen,
             "Press ESC to quit",
             (GAME.SCREEN_WIDTH // 2, 600),
             font_size=FONTS.SIZE_NORMAL,

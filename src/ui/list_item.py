@@ -1,4 +1,5 @@
 import pygame
+
 from typing import Any, Optional
 from pygame import Color, Rect, Surface
 from config import COLOURS, FONTS
@@ -6,6 +7,7 @@ from src.core.utils import draw_outlined_text
 
 
 class ListItem:
+
     """
     List item class for selectable list UI elements.
     Supports both single and multi-selection modes.
@@ -22,7 +24,14 @@ class ListItem:
 
     def draw(self, screen: Surface) -> None:
 
-        """Draws the list item."""
+        """
+        Draws the list item on the screen.
+
+        Parameters
+        ----------
+        screen
+            The screen to draw the list item on.
+        """
 
         # Determines colors based on selection state.
         bg_colour: Color

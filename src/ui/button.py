@@ -6,6 +6,7 @@ from src.core.utils import draw_outlined_text
 
 
 class Button:
+
     """
     Button class for UI interactions.
     """
@@ -19,6 +20,15 @@ class Button:
         self.disabled: bool = disabled
 
     def draw(self, screen: Surface) -> None:
+
+        """
+        Draws the button on the screen.
+
+        Parameters
+        ----------
+        screen
+            The screen to draw the button on.
+        """
 
         self.colour = COLOURS.BUTTON_HOVERED if self.is_hovered and not self.disabled else COLOURS.BUTTON
 

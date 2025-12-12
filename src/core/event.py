@@ -1,5 +1,5 @@
 from collections.abc import Callable
-
+from typing import Any
 
 class Event:
 
@@ -10,11 +10,11 @@ class Event:
 
     Methods
     -------
-    add_listener(self, listener) -> None
+    add_listener(listener) -> None
         Adds a function to the event's listeners.
-    remove_listener(self, listener) -> None
+    remove_listener(listener) -> None
         Removes a function from the event's listeners.
-    broadcast(self, **data) -> None
+    broadcast(**data) -> None
         Broadcasts an event to all active listeners, with optional data.
     """
 
@@ -50,7 +50,7 @@ class Event:
         if listener in self.listeners:
             self.listeners.remove(listener)
 
-    def broadcast(self, **data) -> None:
+    def broadcast(self, **data: Any) -> None:
 
         """
         Broadcasts an event to all active listeners, with optional data.

@@ -32,8 +32,10 @@ class Genome:
         Creates a genome with a random topology, activation functions, and weights.
     get_layer_weights() -> list[tuple[NDArray[float], NDArray[float]]]
         Returns the weights and biases of each layer of the genome.
-    mutate()
+    mutate() -> None
         Applies mutations to weights, activations, and/or topology.
+    copy() -> Genome
+        Creates a copy of the genome.
     """
 
     def __init__(

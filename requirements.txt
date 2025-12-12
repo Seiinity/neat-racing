@@ -2,3 +2,5 @@ pygame>=2.5.0
 numpy>=1.24.0
 pytmx>=3.32
 shapely>=2.1.2
+matplotlib>=3.10.8
+seaborn>=0.13.2

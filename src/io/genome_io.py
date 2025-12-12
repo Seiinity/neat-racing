@@ -3,13 +3,22 @@ import pickle
 from typing import Type, TypedDict
 from pathlib import Path
 from numpy.typing import NDArray
-from src.algorithm import Genome, ActivationFunction, ReLU, Sigmoid, Tanh
+from src.algorithm import GeneticAlgorithm, Genome, ActivationFunction, ReLU, Sigmoid, Tanh
 
 
 class GenomeIO:
 
     """
     Utilities for saving and loading genomes.
+
+    Methods
+    -------
+    save_genome(genome: Genome, filepath: str) -> None
+        Saves a genome to a file.
+    load_genome(filepath: str) -> Genome
+        Loads a genome from a file.
+    save_best_genomes(genetic_algorithm: GeneticAlgorithm, num_best: int, directory: str) -> None:
+        Saves the best genomes from a genetic algorithm.
     """
 
     @staticmethod
@@ -62,7 +71,7 @@ class GenomeIO:
         """
 
         with open(filepath, 'rb') as f:
-            data = pickle.load(f)
+            data: GenomeData = pickle.load(f)
 
         # Maps activation function names to their type.
         activation_map: dict[str, Type[ActivationFunction]] = {
@@ -90,7 +99,7 @@ class GenomeIO:
         return genome
 
     @staticmethod
-    def save_best_genomes(genetic_algorithm, num_best: int, directory: str) -> None:
+    def save_best_genomes(genetic_algorithm: GeneticAlgorithm, num_best: int, directory: str) -> None:
 
         """
         Saves the best genomes from a genetic algorithm.
@@ -105,10 +114,10 @@ class GenomeIO:
             Directory to save genomes to.
         """
 
-        best_genomes = genetic_algorithm.get_top(num_best)
+        best_genomes: list[Genome] = genetic_algorithm.get_top(num_best)
 
         for i, genome in enumerate(best_genomes, 1):
-            filepath = f"{directory}/genome_gen{genetic_algorithm.generation}_rank{i}.pkl"
+            filepath: str = f"{directory}/genome_gen{genetic_algorithm.generation}_rank{i}.pkl"
             GenomeIO.save_genome(genome, filepath)
 
         print(f"Saved top {num_best} genomes to {directory}")

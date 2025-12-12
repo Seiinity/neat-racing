@@ -11,11 +11,6 @@ class NeuralNetwork:
     Represents a feed-forward neural network.
     The input, output, and hidden layers are all dense layers.
 
-    Attributes
-    ----------
-    layers : list[DenseLayer]
-        A list containing the hidden layers and the output layer.
-
     Methods
     -------
     from_genome(genome: Genome) -> NeuralNetwork (static)
@@ -34,7 +29,7 @@ class NeuralNetwork:
 
     def __init__(self, layers: list[DenseLayer]) -> None:
 
-        self.layers: list[DenseLayer] = layers
+        self._layers: list[DenseLayer] = layers
 
     @staticmethod
     def from_genome(genome: Genome) -> NeuralNetwork:
@@ -51,7 +46,6 @@ class NeuralNetwork:
         -------
         NeuralNetwork
             The neural network created from the genome.
-
         """
 
         # Gets the weights and biases of the genome.
@@ -62,7 +56,7 @@ class NeuralNetwork:
 
         # Creates each layer of the neural network.
         layers: list[DenseLayer] = [
-            DenseLayer(size, act, W=W, b=b)
+            DenseLayer(act, W=W, b=b)
             for size, act, (W, b) in zip(sizes, genome.activations, layer_weights)
         ]
 
@@ -87,7 +81,7 @@ class NeuralNetwork:
         x: NDArray[float] = X.copy()
 
         # Runs the forward pass of each layer.
-        for layer in self.layers:
+        for layer in self._layers:
             x = layer.forward(x)
 
         return x
@@ -99,29 +93,17 @@ class DenseLayer:
     Represents a dense layer in a neural network.
     Dense layers are fully connected to each other.
 
-    Attributes
-    ----------
-    size : int
-        The number of neurons in the layer.
-    activation: ActivationFunction
-        An activation function instance to use in the layer.
-    W : NDArray[float]
-        An array containing the weights of the layer's neurons.
-    b : NDArray[float]
-        An array containing the biases of the layer's neurons.
-
     Methods
     -------
     forward(X: NDArray[float]) -> NDArray[float]
         Executes a forward pass of the layer.
     """
 
-    def __init__(self, size: int, activation: ActivationFunction, W: NDArray[float], b: NDArray[float]):
+    def __init__(self, activation: ActivationFunction, W: NDArray[float], b: NDArray[float]):
 
-        self.size: int = size
-        self.activation: ActivationFunction = activation
-        self.W: NDArray[float] = W
-        self.b: NDArray[float] = b
+        self._activation: ActivationFunction = activation
+        self._W: NDArray[float] = W
+        self._b: NDArray[float] = b
 
     def forward(self, x: NDArray[float]) -> NDArray[float]:
 
@@ -146,7 +128,7 @@ class DenseLayer:
         # Transposing ensures the inner dimensions match (needed for matrix multiplication).
         # Finally, each neuron's bias is added.
         # This is essentially y=ax+b for each neuron.
-        z = x @ self.W.T + self.b
+        z = x @ self._W.T + self._b
 
         # Runs the data through the layer's activation function.
-        return self.activation.forward(z)
+        return self._activation.forward(z)

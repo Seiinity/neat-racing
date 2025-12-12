@@ -63,7 +63,7 @@ class TrackConfig:
     CHECKPOINT_COLOUR: tuple[int, int, int] = (255, 255, 0)
 
 
-GAME = GameConfig()
-INPUT = InputConfig()
-CAR = CarConfig()
-TRACK = TrackConfig()
+GAME: GameConfig = GameConfig()
+INPUT: InputConfig = InputConfig()
+CAR: CarConfig = CarConfig()
+TRACK: TrackConfig = TrackConfig()

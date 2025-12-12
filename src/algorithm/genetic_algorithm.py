@@ -17,9 +17,9 @@ class GeneticAlgorithm:
 
     Methods
     -------
-    get_top(self, num: int) -> list[Genome]
+    get_top(num: int) -> list[Genome]
         Returns the top genomes in the population.
-    next_generation(self, fitness_func: Callable[[Genome], float]) -> None
+    next_generation(fitness_func: Callable[[Genome], float]) -> None
         Creates the next generation of genomes.
     """
 
@@ -27,29 +27,15 @@ class GeneticAlgorithm:
         self,
         population_size: int,
         input_size: int,
-        output_size: int,
-        base_genome: Genome | None = None
+        output_size: int
     ) -> None:
 
         self.generation: int = 0
+        self.population: list[tuple[Genome, float]] = [
+            (Genome.random(input_size, output_size), 0) for _ in range(population_size)
+        ]
 
-        self._input_size: int = input_size
-        self._output_size: int = output_size
         self._population_size: int = population_size
-
-        if base_genome is None:
-
-            # Creates the initial population from random Genomes and a fitness of 0.
-            self.population: list[tuple[Genome, float]] = [
-                (Genome.random(input_size, output_size), 0) for _ in range(population_size)
-            ]
-
-        else:
-
-            # Creates the initial population as copies of the provided genome.
-            self.population: list[tuple[Genome, float]] = [
-                (base_genome.copy(), 0.0) for _ in range(population_size)
-            ]
 
     def get_top(self, num: int) -> list[Genome]:
 
@@ -97,7 +83,7 @@ class GeneticAlgorithm:
 
         # The remaining ones have a chance to mutate.
         for genome in survivors[GENETIC.ELITISM_CUTOFF:]:
-            copy = genome.copy()
+            copy: Genome = genome.copy()
             copy.mutate()
             new_population.append((copy, 0))
 
@@ -133,23 +119,26 @@ class GeneticAlgorithm:
 
         Notes
         -----
-        The top ``ELITISM_CUTOFF`` genomes are picked directly.
-        The top 50% of genomes go through tournament selection.
-        This prevents very poor genomes from being selected.
+        The top ``GeneticConfig.ELITISM_CUTOFF`` genomes are
+        picked directly. The top ``GeneticConfig.TOURNAMENT_SIZE`` (%)
+        of genomes go through tournament selection.
         """
 
         # Sorts the population by fitness (descending) and keeps the best ones.
         self.population.sort(key=lambda x: x[1], reverse=True)
         survivors: list[Genome] = [genome for genome, _ in self.population[:GENETIC.ELITISM_CUTOFF]]
 
-        # Allows tournament selection from the top 50% of performers.
-        tournament_pool_size = max(len(self.population) // 2, GENETIC.ELITISM_CUTOFF + 1)
-        tournament_pool = self.population[:tournament_pool_size]
+        # Allows tournament selection from the top n% of performers.
+        tournament_pool_size: int = max(
+            int(len(self.population) * GENETIC.TOURNAMENT_SIZE),
+            GENETIC.ELITISM_CUTOFF + 1
+        )
+        tournament_pool: list[tuple[Genome, float]] = self.population[:tournament_pool_size]
 
         # Runs the tournaments.
         for _ in range(self._population_size - GENETIC.ELITISM_CUTOFF):
 
-            winner = GeneticAlgorithm._run_tournament(tournament_pool)
+            winner: Genome = GeneticAlgorithm._run_tournament(tournament_pool)
             survivors.append(winner)
 
         return survivors

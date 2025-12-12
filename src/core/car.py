@@ -5,7 +5,9 @@ import numpy as np
 
 from pygame import Color, Surface, Vector2, Rect
 from shapely import Point
-from config import CAR
+from shapely.geometry.multilinestring import MultiLineString
+
+from config import CAR, COLOURS
 from .events import Events
 from .track import Track
 
@@ -17,25 +19,46 @@ class Car:
 
     Attributes
     ----------
+    rect : Rect
+        The car's bounding rectangle.
     position : Vector2
         The current position of the car, in pixels.
     velocity : float
         The current velocity of the car, in pixels/s.
+    current_checkpoint : int
+        The order of the checkpoint the car must hit next.
+    laps_completed : int
+        The number of laps completed by the car.
+    sensor_distances : list[float]
+        A list containing the distances of all sensors to walls.
 
     Methods
     -------
-    fixed_update(self, dt: float) -> None
+    fixed_update(dt: float) -> None
         Updates the car using physics operations.
-    draw(self, screen: Surface) -> None
+    update_sensors(track: Track) -> None
+        Updates all sensor distances using the track's collision mask.
+    check_track_collision(track: Track) -> bool
+        Checks whether any point of the car is off the track.
+    handle_checkpoint_hit(checkpoint_order: int) -> None
+         Handles checkpoint collision.
+    handle_finish_line(total_checkpoints: int) -> None
+        Handles finish line crossing.
+    draw(screen: Surface) -> None
         Draws the car on the screen.
+    get_transformed_points(part: str) -> list[Vector2]
+        Gets the points that make up the car's shape.
+    dispose() -> None
+        Liberates the car for garbage collection.
     """
 
-    def __init__(self, start_pos: Vector2) -> None:
+    def __init__(self, start_pos: Vector2, colour: Color = COLOURS.CAR_DEFAULT) -> None:
 
         self.rect: Rect | None = None
         self.position: Vector2 = start_pos.copy()
         self.velocity: float = 0.0
         self._angle: float = 0.0
+        self._colour: Color = colour
 
         # Progression tracking.
         self.current_checkpoint: int = 0
@@ -134,11 +157,6 @@ class Car:
         ----------
         track : Track
             The track to raycast against.
-
-        Notes
-        -----
-        Uses the track's fast raycast method for O(1) collision checks
-        instead of Shapely geometry intersections.
         """
 
         for i, angle_offset in enumerate(self._sensor_angles_rad):
@@ -150,12 +168,6 @@ class Car:
             # Casts a ray.
             distance: float = track.raycast(self.position, direction, CAR.SENSOR_RANGE)
             self.sensor_distances[i] = distance / CAR.SENSOR_RANGE
-
-    def set_ai_controls(self, accelerate: bool, brake: bool, turn: int) -> None:
-
-        self._is_accelerating = accelerate
-        self._is_braking = brake
-        self._turn_direction = turn
 
     def check_track_collision(self, track: Track) -> bool:
 
@@ -170,11 +182,8 @@ class Car:
         Returns
         -------
         bool
-            ``True`` if any point is off the track (collision), ``False`` otherwise.
-
-        Notes
-        -----
-        Uses the track's collision mask lookup.
+            ``True`` if any point is off the track (collision),
+            ``False`` otherwise.
         """
 
         for point in self.get_transformed_points('triangle'):
@@ -250,21 +259,21 @@ class Car:
             return
 
         # Finds the track point which is nearest to the car's centre.
-        boundary = track.shape.boundary
-        nearest = boundary.interpolate(
+        boundary: MultiLineString = track.shape.boundary
+        nearest: Point = boundary.interpolate(
             boundary.project(Point(self.position.x, self.position.y))
         )
 
         # Calculates the collision normal.
-        normal = Vector2(self.position.x - nearest.x, self.position.y - nearest.y).normalize()
+        normal: Vector2 = Vector2(self.position.x - nearest.x, self.position.y - nearest.y).normalize()
 
         # Pushes the car away from the wall.
         self.position += normal * CAR.SIZE * 0.1
 
         # Calculates the velocity when sliding along a wall.
         v = self._direction * self.velocity
-        normal_component = normal * v.dot(normal)
-        v_sliding = v - normal_component
+        normal_component: Vector2 = normal * v.dot(normal)
+        v_sliding: Vector2 = v - normal_component
 
         # Applies sliding friction.
         v_sliding *= CAR.SLIDING_FRICTION
@@ -289,11 +298,11 @@ class Car:
         bool
             ``True`` if all points of the car's triangle shape are inside
             the track, ``False`` otherwise.
-
         """
+
         return all(track.is_on_track(int(p.x), int(p.y)) for p in self.get_transformed_points('triangle'))
 
-    def draw(self, screen: Surface, colour: Color = Color(255, 255, 255)) -> None:
+    def draw(self, screen: Surface, colour: Color | None = None) -> None:
 
         """
         Draws the car on the screen.
@@ -306,6 +315,9 @@ class Car:
             The colour to draw the car in.
         """
 
+        if colour is None:
+            colour = self._colour
+
         # Draws the triangle and line.
         # The line's points must be unpacked as the line function accepts separate arguments.
         pygame.draw.polygon(screen, colour, self.get_transformed_points('triangle'), width=2)
@@ -315,6 +327,15 @@ class Car:
             self._draw_sensors(screen)
 
     def _draw_sensors(self, screen: Surface) -> None:
+
+        """
+        Draws the car's sensors for debug purposes.
+
+        Parameters
+        ----------
+        screen : Surface
+            The screen to draw on.
+        """
 
         for i, angle_offset in enumerate(self._sensor_angles_rad):
 
@@ -381,23 +402,29 @@ class Car:
 
         self._show_sensors = not self._show_sensors
 
-    def _accelerate(self) -> None:
+    def _accelerate(self, data: Car) -> None:
 
         """
         Sets the acceleration flag to True.
         """
 
+        if data is not self:
+            return
+
         self._is_accelerating = True
 
-    def _brake(self) -> None:
+    def _brake(self, data: Car) -> None:
 
         """
         Sets the breaking flag to True.
         """
 
+        if data is not self:
+            return
+
         self._is_braking = True
 
-    def _turn(self, data) -> None:
+    def _turn(self, data: tuple[Car, int]) -> None:
 
         """
         Sets the turning direction.
@@ -408,8 +435,13 @@ class Car:
             Its sign controls the direction of the turning.
         """
 
+        car, direction = data
+
+        if car is not self:
+            return
+
         # Sign makes sure that the parameter only controls the direction, not the speed.
-        self._turn_direction = np.sign(data)
+        self._turn_direction = np.sign(direction)
 
     def _reset_input(self) -> None:
 

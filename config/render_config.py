@@ -26,6 +26,15 @@ class ColoursConfig:
     TEXT_ERROR: ClassVar[Color] = Color(150, 100, 100)
     TEXT_SELECTED: ClassVar[Color] = Color(150, 255, 150)
 
+    CAR_DEFAULT: ClassVar[Color] = Color(255, 255, 255)
+    CARS: ClassVar[list[Color]] = [
+        Color('#e85651'),
+        Color('#e8bb51'),
+        Color('#51e86a'),
+        Color('#5195e8'),
+        Color('#b151e8')
+    ]
+
 
 @dataclass(frozen=True)
 class FontsConfig:
@@ -41,5 +50,5 @@ class FontsConfig:
     SIZE_XL: int = 20
 
 
-COLOURS = ColoursConfig()
-FONTS = FontsConfig()
+COLOURS: ColoursConfig = ColoursConfig()
+FONTS: FontsConfig = FontsConfig()

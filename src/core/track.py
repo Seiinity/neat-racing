@@ -7,9 +7,9 @@ import numpy as np
 from numpy.typing import NDArray
 from pygame import Vector2, Rect, Surface
 from pytmx import TiledImageLayer, TiledObjectGroup, TiledObject, TiledMap
-from shapely.geometry import Polygon, Point
+from shapely import Polygon, Point
 from shapely.affinity import rotate
-from shapely.prepared import prep
+from shapely.prepared import PreparedGeometry, prep
 from config import TRACK
 from .events import Events
 from .utils import draw_outlined_text, get_tiled_layer
@@ -22,6 +22,8 @@ class Track:
 
     Attributes
     ----------
+    background : Surface
+        The track's background image.
     checkpoints : list[Checkpoint]
         List of checkpoints on the track.
     finish_line : Rect
@@ -35,14 +37,14 @@ class Track:
 
     Methods
     -------
-    draw(self, screen: Surface) -> None
-        Draws the track on the screen.
-    is_on_track(self, position: Vector2) -> bool
+    is_on_track(position: Vector2) -> bool
         Checks if a position is within the track boundaries.
-    is_on_track_fast(self, x: int, y: int) -> bool
-        Fast O(1) check if a position is within the track boundaries.
-    raycast(self, origin: Vector2, direction: Vector2, max_distance: float) -> float
+    raycast(origin: Vector2, direction: Vector2, max_distance: float) -> float
         Raycast using the collision mask.
+    check_checkpoint(x: float, y: float) -> int
+        Checks if a position is inside any checkpoint.
+    draw(screen: Surface) -> None
+        Draws the track on the screen.
     """
 
     def __init__(self, tmx_path: str):
@@ -51,8 +53,8 @@ class Track:
 
         self._width: int = self._tmx_data.width * self._tmx_data.tilewidth
         self._height: int = self._tmx_data.height * self._tmx_data.tileheight
-        self._background: Surface = self._load_background()
         self._show_checkpoints: bool = False
+        self.background: Surface = self._load_background()
 
         self.checkpoints: list[Checkpoint] = self._load_checkpoints()
         self.checkpoints.sort(key=lambda cp: cp.order)
@@ -152,7 +154,7 @@ class Track:
         """
 
         object_layer: TiledObjectGroup | None = get_tiled_layer(self._tmx_data, 'objects')
-        player_start_pos_obj = next(obj for obj in object_layer if obj.type == 'start_pos_player')
+        player_start_pos_obj: TiledObject = next(obj for obj in object_layer if obj.type == 'start_pos_player')
 
         self.start_positions = [Vector2(obj.x, obj.y) for obj in object_layer if obj.type == 'start_pos']
         self.player_start_position = Vector2(player_start_pos_obj.x, player_start_pos_obj.y)
@@ -176,15 +178,15 @@ class Track:
 
         bounds_layer: TiledObjectGroup | None = get_tiled_layer(self._tmx_data, 'bounds')
 
-        polygons = [obj for obj in bounds_layer if hasattr(obj, 'points')]
-        outer_bound = polygons[0]
-        inner_bound = polygons[1]
+        polygons: list[TiledObject] = [obj for obj in bounds_layer if hasattr(obj, 'points')]
+        outer_bound: TiledObject = next(obj for obj in polygons if obj.name == 'outer_bound')
+        inner_bound: TiledObject = next(obj for obj in polygons if obj.name == 'inner_bound')
 
-        outer_points = [(p.x, p.y) if hasattr(p, 'x') else p for p in outer_bound.points]
-        inner_points = [(p.x, p.y) if hasattr(p, 'x') else p for p in inner_bound.points]
+        outer_points: list[Point] = [(p.x, p.y) if hasattr(p, 'x') else p for p in outer_bound.points]
+        inner_points: list[Point] = [(p.x, p.y) if hasattr(p, 'x') else p for p in inner_bound.points]
 
-        outer_polygon = Polygon(outer_points)
-        inner_polygon = Polygon(inner_points)
+        outer_polygon: Polygon = Polygon(outer_points)
+        inner_polygon: Polygon = Polygon(inner_points)
 
         return outer_polygon.difference(inner_polygon)
 
@@ -203,7 +205,7 @@ class Track:
         mask: NDArray[np.uint8] = np.zeros((self._height, self._width), dtype=np.uint8)
 
         # Processes in chunks for memory efficiency.
-        prepared_shape = prep(self.shape)
+        prepared_shape: PreparedGeometry[Polygon] = prep(self.shape)
         chunk_size: int = 100
 
         for y_start in range(0, self._height, chunk_size):
@@ -221,13 +223,15 @@ class Track:
                 )
 
                 # Flattens and checks all points in chunk.
-                points = [Point(x, y) for x, y in zip(xs.ravel(), ys.ravel())]
+                points: list[Point] = [Point(x, y) for x, y in zip(xs.ravel(), ys.ravel())]
 
                 # Batch containment check.
-                results = [prepared_shape.contains(p) for p in points]
+                results: list[bool] = [prepared_shape.contains(p) for p in points]
 
                 # Reshapes and assigns to mask.
-                chunk_mask = np.array(results, dtype=np.uint8).reshape(y_end - y_start, x_end - x_start)
+                chunk_mask: NDArray[tuple[int, int]] = np.array(
+                    results, dtype=np.uint8
+                ).reshape(y_end - y_start, x_end - x_start)
                 mask[y_start:y_end, x_start:x_end] = chunk_mask
 
         return mask
@@ -287,11 +291,6 @@ class Track:
         -------
         float
             The distance to the first collision, or max_distance if none.
-
-        Notes
-        -----
-        Uses DDA (Digital Differential Analyser) algorithm for efficient
-        ray marching through the collision mask.
         """
 
         # Starting position.
@@ -377,7 +376,7 @@ class Track:
         Draws the background and checkpoints if visibility is toggled on.
         """
 
-        screen.blit(self._background, (0, 0))
+        screen.blit(self.background, (0, 0))
 
         if not self._show_checkpoints:
             return
@@ -437,16 +436,16 @@ class Checkpoint:
         The checkpoint colour is controlled by ``TrackConfig.CHECKPOINT_COLOUR``.
         """
 
-        surface = pygame.Surface((obj.width, obj.height), pygame.SRCALPHA)
+        surface: Surface = Surface((obj.width, obj.height), pygame.SRCALPHA)
         surface.fill(TRACK.CHECKPOINT_COLOUR)
 
         self._surface = pygame.transform.rotate(surface, -obj.rotation)
 
         # Pygame's rotate() shifts the pivot point every 90 degrees.
         # This compensates with a y offset for rotations in 90-179 and 270-359.
-        normalised = obj.rotation % 360
-        needs_offset = (int(normalised - 1) // 90) % 2 == 1
-        y_offset = -self._surface.get_height() if needs_offset else 0
+        normalised: int = obj.rotation % 360
+        needs_offset: bool = (int(normalised - 1) // 90) % 2 == 1
+        y_offset: int = -self._surface.get_height() if needs_offset else 0
 
         # Calculates the position and dimensions of the surface.
         self._surface_rect = self._surface.get_rect(topleft=(obj.x, obj.y + y_offset))
@@ -473,7 +472,7 @@ class Checkpoint:
         """
 
         # Creates an accurate rotated polygon for collision checks.
-        rect = Polygon([
+        rect: Polygon = Polygon([
             (obj.x, obj.y),
             (obj.x + obj.width, obj.y),
             (obj.x + obj.width, obj.y + obj.height),
