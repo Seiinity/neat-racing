@@ -4,6 +4,10 @@ import seaborn as sns
 
 from typing import Any
 from queue import Empty
+from matplotlib.backend_bases import Event, MouseEvent
+from matplotlib.colorbar import Colorbar
+from matplotlib.axes import Axes
+from matplotlib.transforms import Bbox
 from numpy.typing import NDArray
 
 
@@ -30,13 +34,57 @@ def plotting_process(queue: mp.Queue):
     # Track background (received with first data packet).
     track_img: NDArray | None = None
 
+    # Colour bar reference for cleanup.
+    heatmap_cbar: Colorbar | None = None
+
+    # Stores the original positions to restore the grid view.
+    original_positions: dict[Axes, Bbox] = {ax: ax.get_position() for ax in axes.flat}
+    zoomed_ax: Axes | None = None
+
+    def on_click(event: Event) -> None:
+
+        if not isinstance(event, MouseEvent):
+            return None
+
+        nonlocal zoomed_ax
+
+        if event.inaxes is None:
+            return None
+
+        # If the view is already zoomed, restores the grid view.
+        if zoomed_ax is not None:
+
+            for ax in axes.flat:
+                ax.set_visible(True)
+                ax.set_position(original_positions[ax])
+            zoomed_ax = None
+            fig.canvas.draw_idle()
+            return None
+
+        # Zooms into clicked subplot.
+        clicked_ax: Axes = event.inaxes
+        if clicked_ax in axes.flat:
+
+            for ax in axes.flat:
+                if ax != clicked_ax:
+                    ax.set_visible(False)
+
+            clicked_ax.set_position((0.1, 0.1, 0.8, 0.8))
+            zoomed_ax = clicked_ax
+            fig.canvas.draw_idle()
+
+        return None
+
+    # Links the defined function to matplotlib's click event.
+    fig.canvas.mpl_connect('button_press_event', on_click)
+
     while True:
 
         # Checks for new data.
         try:
             data: dict[str, Any] = queue.get(timeout=0.1)
         except Empty:
-            plt.pause(0.01)
+            fig.canvas.flush_events()
             continue
 
         # Shutdown.
@@ -58,9 +106,22 @@ def plotting_process(queue: mp.Queue):
         # Updates title with current generation.
         fig.suptitle(f"Training Progress — Generation {current_gen}")
 
+        # Removes old colour bar.
+        if heatmap_cbar is not None:
+            heatmap_cbar.remove()
+            heatmap_cbar = None
+
         # Clears and redraws.
         for ax in axes.flat:
             ax.clear()
+
+        # Restores zoom state after clearing.
+        if zoomed_ax is not None:
+            for ax in axes.flat:
+                if ax != zoomed_ax:
+                    ax.set_visible(False)
+                else:
+                    ax.set_position((0.1, 0.1, 0.8, 0.8))
 
         # Fitness over time.
         axes[0, 0].plot(generations, best_fitness, label='Best', color='green')
@@ -113,28 +174,66 @@ def plotting_process(queue: mp.Queue):
             axes[1, 1].set_ylabel("Count")
 
         # Death position heatmap with track overlay.
+        heatmap_ax = axes[1, 2]
+        is_heatmap_zoomed = (zoomed_ax is heatmap_ax)
+
         if track_img is not None:
 
             track_height, track_width = track_img.shape[:2]
-            axes[1, 2].imshow(track_img, extent=[0, track_width, track_height, 0], aspect='equal')
+
+            # Use 'auto' aspect when zoomed to allow proper scaling.
+            aspect = 'auto' if is_heatmap_zoomed else 'equal'
+            heatmap_ax.imshow(track_img, extent=[0, track_width, track_height, 0], aspect=aspect)
 
             if 'death_positions' in data and len(data['death_positions']) > 1:
 
-                death_x: list[float] = [pos[0] for pos in data['death_positions']]
-                death_y: list[float] = [pos[1] for pos in data['death_positions']]
+                death_x = [pos[0] for pos in data['death_positions']]
+                death_y = [pos[1] for pos in data['death_positions']]
 
-                sns.kdeplot(
-                    x=death_x, y=death_y, ax=axes[1, 2],
-                    fill=True, cmap='Reds', alpha=0.3,
+                bin_size = 20
+                bins_x = int(track_width / bin_size)
+                bins_y = int(track_height / bin_size)
+
+                _, _, _, mesh = heatmap_ax.hist2d(
+                    death_x, death_y,
+                    bins=[bins_x, bins_y],
+                    cmap='Reds',
+                    alpha=0.4,
+                    range=[[0, track_width], [0, track_height]]
                 )
 
-            axes[1, 2].set_xlim(0, track_width)
-            axes[1, 2].set_ylim(track_height, 0)
-            axes[1, 2].grid(alpha=0.1)
+                # Only show colorbar if not zoomed into a different plot.
+                if zoomed_ax is None or is_heatmap_zoomed:
+                    heatmap_cbar = fig.colorbar(mesh, ax=heatmap_ax)
+                    heatmap_cbar.set_label('Deaths')
 
-        axes[1, 2].set_title("Death Heatmap (All Generations)")
-        axes[1, 2].set_xlabel("X")
-        axes[1, 2].set_ylabel("Y")
+            heatmap_ax.set_xlim(0, track_width)
+            heatmap_ax.set_ylim(track_height, 0)
+            heatmap_ax.grid(alpha=0.1)
 
-        fig.tight_layout()
-        plt.pause(0.01)
+        heatmap_ax.set_title("Death Heatmap (All Generations)")
+        heatmap_ax.set_xlabel("X")
+        heatmap_ax.set_ylabel("Y")
+
+        if zoomed_ax is None:
+
+            fig.tight_layout()
+
+        else:
+
+            for ax in axes.flat:
+
+                if ax != zoomed_ax:
+                    ax.set_visible(False)
+                else:
+                    ax.set_position((0.1, 0.1, 0.8, 0.8))
+
+            # Positions the colour bar when the heatmap is zoomed.
+            if is_heatmap_zoomed and heatmap_cbar is not None:
+                heatmap_cbar.ax.set_visible(True)
+                heatmap_cbar.ax.set_position((0.87, 0.1, 0.03, 0.8))
+            elif heatmap_cbar is not None:
+                heatmap_cbar.ax.set_visible(False)
+
+        fig.canvas.draw_idle()
+        fig.canvas.flush_events()

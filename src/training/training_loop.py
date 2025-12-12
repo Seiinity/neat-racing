@@ -3,6 +3,7 @@ import multiprocessing as mp
 
 from typing import Any
 from pathlib import Path
+from queue import Empty
 from pygame import Vector2, Surface
 from pygame.time import Clock
 from config import COLOURS, FONTS, TRAINING, CAR, GAME
@@ -299,9 +300,23 @@ class TrainingLoop:
 
         else:
 
-            # Stops the plotting process.
-            self._plot_queue.put(None)
-            self._plot_process.join(timeout=1)
+            # Drains the queue before sending shutdown signal.
+            if self._plot_queue is not None:
+
+                try:
+                    while not self._plot_queue.empty():
+                        self._plot_queue.get_nowait()
+                except Empty:
+                    pass
+
+                self._plot_queue.put(None)
+
+            if self._plot_process is not None:
+
+                self._plot_process.join(timeout=1)
+                if self._plot_process.is_alive():
+                    self._plot_process.terminate()
+
             self._plot_process = None
             self._plot_queue = None
             self._graph_button.text = "Show Graphs"
