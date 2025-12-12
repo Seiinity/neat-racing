@@ -352,8 +352,6 @@ class Car:
         Sets the breaking flag to True.
         """
 
-        print("Brake")
-
         if data is not self:
             return
 
