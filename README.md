@@ -6,6 +6,8 @@
 A neural network racing game where AI cars learn to drive using a genetic algorithm inspired by **NEAT (NeuroEvolution of Augmenting Topologies)**.<br/>
 Watch cars evolve from crashing into walls to smoothly navigating tracks, then race against the best AI yourself.
 
+![Thumbnail](https://i.imgur.com/DRFXffL.png)
+
 ## Features
 
 ### Training Mode
