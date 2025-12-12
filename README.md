@@ -23,11 +23,11 @@ Watch cars evolve from crashing into walls to smoothly navigating tracks, then r
 ## Installation
 
 ```bash
-# Clone the repository
+# Clones the repository.
 git clone https://github.com/seiinity/neat-racing.git
 cd neat-racing
 
-# Install dependencies
+# Installs the dependencies (Python environment must be running).
 pip install -r requirements.txt
 ```
 
