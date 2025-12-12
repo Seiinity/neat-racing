@@ -74,6 +74,7 @@ neat-racing/
 │   ├── fonts/                     # Custom fonts.
 │   ├── genomes/                   # Saved neural network genomes.
 │   └── tracks/                    # Track files (.tmx) and images.
+├── docs/                          # Documentation
 ├── src/
 │   ├── algorithm/                 # Neural network and genetic algorithm.
 │   ├── core/                      # Car, track, and event system.
