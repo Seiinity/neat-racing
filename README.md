@@ -135,7 +135,7 @@ These are some examples:
 
 ## Included Genomes
 
-The repository includes the top 10 genomes from generations 50, 100, 300, and 1100.<br/>
+The repository includes the top 10 genomes from generations 50, 100, 300, and 1000.<br/>
 They were trained with the default config values.
 
 ## License

@@ -76,16 +76,31 @@ class GeneticAlgorithm:
 
         survivors: list[Genome] = self._select_survivors()
 
-        # The elitism-chosen survivors get copied directly, the remaining ones have a chance to mutate.
+        # The elitism-chosen survivors get copied directly.
         new_population: list[tuple[Genome, float]] = [
             (genome.copy(), 0) for genome in survivors[:GENETIC.ELITISM_CUTOFF]
         ]
 
-        # The remaining ones have a chance to mutate.
-        for genome in survivors[GENETIC.ELITISM_CUTOFF:]:
-            copy: Genome = genome.copy()
-            copy.mutate()
-            new_population.append((copy, 0))
+        # Tournament pool for parent selection.
+        tournament_pool_size: int = max(
+            int(len(self.population) * GENETIC.TOURNAMENT_SIZE),
+            GENETIC.ELITISM_CUTOFF + 1
+        )
+        tournament_pool: list[tuple[Genome, float]] = self.population[:tournament_pool_size]
+
+        # Fills the rest via crossover + mutation.
+        while len(new_population) < self._population_size:
+
+            parent_a, fitness_a = self._run_tournament_with_fitness(tournament_pool)
+            parent_b, fitness_b = self._run_tournament_with_fitness(tournament_pool)
+
+            # Ensures parent_a is the fitter one.
+            if fitness_b > fitness_a:
+                parent_a, parent_b = parent_b, parent_a
+
+            child = self._crossover(parent_a, parent_b)
+            child.mutate()
+            new_population.append((child, 0))
 
         self.generation += 1
         self.population = new_population
@@ -170,3 +185,53 @@ class GeneticAlgorithm:
         winner: tuple[Genome, float] = max(picked, key=lambda x: x[1])
 
         return winner[0]
+
+    @staticmethod
+    def _run_tournament_with_fitness(genomes: list[tuple[Genome, float]]) -> tuple[Genome, float]:
+
+        """
+        Runs a tournament and returns both the winner and its fitness.
+        """
+
+        if len(genomes) < 2:
+            return genomes[0]
+
+        picked: list[tuple[Genome, float]] = RNG.choice(genomes, size=2).tolist()
+        winner: tuple[Genome, float] = max(picked, key=lambda x: x[1])
+
+        return winner
+
+    @staticmethod
+    def _crossover(parent_a: Genome, parent_b: Genome) -> Genome:
+
+        """
+        Creates a child genome via arithmetic crossover.
+
+        Parameters
+        ----------
+        parent_a : Genome
+            The first parent genome.
+        parent_b
+            The second parent genome.
+
+        Returns
+        -------
+        Genome
+            A child genome.
+        """
+
+        # Only crossover if topologies match.
+        if parent_a.topology != parent_b.topology:
+            return parent_a.copy()
+
+        # Performs the arithmetic crossover of weights.
+        alpha = RNG.uniform(0.0, 1.0, size=parent_a.weights.shape)
+        child_weights = alpha * parent_a.weights + (1 - alpha) * parent_b.weights
+
+        return Genome(
+            parent_a.input_size,
+            parent_a.output_size,
+            parent_a.topology.copy(),
+            parent_a.activations.copy(),
+            child_weights
+        )

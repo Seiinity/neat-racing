@@ -22,8 +22,8 @@ class MutationConfig:
     Contains mutation-related configuration variables.
     """
 
-    CHANCE_WEIGHT: float = 0.1
-    CHANCE_TOPOLOGY: float = 0.05
+    CHANCE_WEIGHT: float = 0.05
+    CHANCE_TOPOLOGY: float = 0.01
     CHANCE_ACTIVATION: float = 0.05
     NOISE_LIMIT: float = 0.1
     RESIZE_LIMIT: int = 4

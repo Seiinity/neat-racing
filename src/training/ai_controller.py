@@ -247,7 +247,7 @@ class AIController:
         velocity_score: float = max(0.0, self.car.velocity) * FITNESS.REWARD_VELOCITY
 
         # Time alive is penalised to prevent cars from driving aimlessly.
-        survival_score: float = self.time_alive * FITNESS.PENALTY_TIME
+        time_penalty: float = self.time_alive * FITNESS.PENALTY_TIME
 
         self.fitness = (
             distance_score +
@@ -255,7 +255,7 @@ class AIController:
             lap_score +
             safety_score +
             velocity_score +
-            survival_score
+            time_penalty
         )
 
     def draw(self, screen: Surface, is_best: bool = False, is_worst: bool = False) -> None:
