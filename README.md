@@ -94,9 +94,10 @@ Each car is controlled by a neural network that receives **sensor inputs** (dist
 ### Genetic Algorithm
 
 1. **Evaluation**: Each genome controls a car; fitness is based on velocity, distance to walls, distance travelled, checkpoints reached, laps completed, and time wasted;
-2. **Selection**: Top performers are selected for the next generation;
-3. **Mutation**: Random modifications to the topology, weights, or activation functions;
-4. **Repeat**: The process continues until the cars master the track.
+2. **Selection**: Top performers are selected for crossover;
+3. **Crossover**: New genomes are created from a mix of two parent genomes;
+4. **Mutation**: Random modifications to the topology, weights, or activation functions;
+5. **Repeat**: The process continues until the cars master the track.
 
 ## Creating Custom Tracks
 
