@@ -1,5 +1,4 @@
 # Addendum - Usage of LLMs
----
 
 LLMs were used sparingly in this project, and never for critical code sections.<br/>
 
