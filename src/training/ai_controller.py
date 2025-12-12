@@ -1,10 +1,11 @@
 import numpy as np
 
 from numpy.typing import NDArray
-from pygame import Color, Surface
-from config import FITNESS
+from pygame import Color, Surface, Vector2
+from pygame.draw import line
+from config import CONTROLLER, FITNESS
 from src.algorithm import Genome, NeuralNetwork
-from src.core import Car, Events
+from src.core import Car, Track, Events
 
 
 class AIController:
@@ -55,6 +56,34 @@ class AIController:
         self._total_distance: float = 0.0
         self._wrong_checkpoints: int = 0
         self._current_actions: tuple[bool, bool, int] = (False, False, 0)
+
+        # Sensor data.
+        self._sensor_distances: list[float] = [0.0] * len(CONTROLLER.SENSORS)
+        self._show_sensors: bool = False
+        self._sensor_angles_rad: list[float] = [np.radians(angle) for angle in CONTROLLER.SENSORS]
+
+        Events.on_keypress_sensors.add_listener(self._toggle_sensors)
+
+    def update_sensors(self, track: Track) -> None:
+
+        """
+        Updates all sensor distances using the track's collision mask.
+
+        Parameters
+        ----------
+        track : Track
+            The track to raycast against.
+        """
+
+        for i, angle_offset in enumerate(self._sensor_angles_rad):
+
+            # Calculates the sensor's direction.
+            sensor_angle: float = self.car.angle + angle_offset
+            direction: Vector2 = Vector2(np.cos(sensor_angle), np.sin(sensor_angle))
+
+            # Casts a ray.
+            distance: float = track.raycast(self.car.position, direction, CONTROLLER.SENSOR_RANGE)
+            self._sensor_distances[i] = distance / CONTROLLER.SENSOR_RANGE
 
     def handle_checkpoint_hit(self, checkpoint_order: int, total_checkpoints: int) -> None:
 
@@ -144,7 +173,7 @@ class AIController:
             self._total_distance += self.car.velocity * dt
 
         # Runs the neural network.
-        inputs: NDArray[float] = np.array(self.car.sensor_distances)
+        inputs: NDArray[float] = np.array(self._sensor_distances)
         outputs: NDArray[float] = self._network.forward(inputs)
 
         # Retrieves the acceleration and braking probabilities.
@@ -211,7 +240,7 @@ class AIController:
         lap_score: float = self.car.laps_completed * FITNESS.REWARD_LAP
 
         # Rewards staying away from walls.
-        avg_sensor_distance: float = float(np.mean(self.car.sensor_distances))
+        avg_sensor_distance: float = float(np.mean(self._sensor_distances))
         safety_score: float = avg_sensor_distance * FITNESS.REWARD_SAFETY
 
         # Rewards maintaining speed.
@@ -250,10 +279,49 @@ class AIController:
 
         self.car.draw(screen, colour)
 
+        if self._show_sensors:
+            self._draw_sensors(screen)
+
+    def _draw_sensors(self, screen: Surface) -> None:
+
+        """
+        Draws the car's sensors for debug purposes.
+
+        Parameters
+        ----------
+        screen : Surface
+            The screen to draw on.
+        """
+
+        for i, angle_offset in enumerate(self._sensor_angles_rad):
+
+            sensor_angle: float = self.car.angle + angle_offset
+            direction: Vector2 = Vector2(np.cos(sensor_angle), np.sin(sensor_angle))
+            distance: float = self._sensor_distances[i] * CONTROLLER.SENSOR_RANGE
+            end_point: Vector2 = self.car.position + direction * distance
+
+            line(
+                screen,
+                Color('#9ee88b'),
+                (self.car.position.x, self.car.position.y),
+                (end_point.x, end_point.y),
+                1
+            )
+
+    def _toggle_sensors(self) -> None:
+
+        """
+        Toggles the visualisation of sensors.
+        """
+
+        self._show_sensors = not self._show_sensors
+
     def dispose(self) -> None:
 
         """
         Liberates the AI controller for garbage collection.
         """
+
+        Events.on_keypress_sensors.remove_listener(self._toggle_sensors)
 
         self.car.dispose()

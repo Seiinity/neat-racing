@@ -1,4 +1,16 @@
 from dataclasses import dataclass
+from typing import ClassVar
+
+
+@dataclass(frozen=True)
+class ControllerConfig:
+
+    """
+    Contains AI controller-related configuration variables.
+    """
+
+    SENSORS: ClassVar[list[float]] = [-45, -30, -15, 0, 15, 30, 45]
+    SENSOR_RANGE = 100
 
 
 @dataclass(frozen=True)
@@ -33,5 +45,6 @@ class FitnessConfig:
     PENALTY_TIME: float = -200.0
 
 
+CONTROLLER: ControllerConfig = ControllerConfig()
 TRAINING: TrainingConfig = TrainingConfig()
 FITNESS: FitnessConfig = FitnessConfig()

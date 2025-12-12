@@ -53,9 +53,6 @@ class CarConfig:
         'line': [(-2 / 3, -0.5), (-2 / 3, 0.5)]
     }
 
-    SENSORS: ClassVar[list[float]] = [-45, -30, -15, 0, 15, 30, 45]
-    SENSOR_RANGE = 100
-
 
 @dataclass(frozen=True)
 class TrackConfig:

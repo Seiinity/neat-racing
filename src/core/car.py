@@ -25,12 +25,12 @@ class Car:
         The current position of the car, in pixels.
     velocity : float
         The current velocity of the car, in pixels/s.
+    angle : float
+        The current angle of the car, in radians.
     current_checkpoint : int
         The order of the checkpoint the car must hit next.
     laps_completed : int
         The number of laps completed by the car.
-    sensor_distances : list[float]
-        A list containing the distances of all sensors to walls.
 
     Methods
     -------
@@ -57,7 +57,7 @@ class Car:
         self.rect: Rect | None = None
         self.position: Vector2 = start_pos.copy()
         self.velocity: float = 0.0
-        self._angle: float = 0.0
+        self.angle: float = 0.0
         self._colour: Color = colour
 
         # Progression tracking.
@@ -73,13 +73,6 @@ class Car:
         self._previous_position: Vector2 = start_pos.copy()
         self._previous_velocity: float = 0.0
         self._direction: Vector2 = Vector2(1, 0)
-
-        # Sensor data.
-        self.sensor_distances: list[float] = [0.0] * len(CAR.SENSORS)
-        self._show_sensors: bool = False
-
-        # Pre-computes sensor angle offsets in radians for performance.
-        self._sensor_angles_rad: list[float] = [np.radians(angle) for angle in CAR.SENSORS]
 
         self._update_rect()
         self._add_listeners()
@@ -117,14 +110,14 @@ class Car:
             self.velocity -= CAR.BRAKE_STRENGTH * dt
 
         # Turns.
-        self._angle += self._turn_direction * np.radians(CAR.TURN_SPEED) * dt
+        self.angle += self._turn_direction * np.radians(CAR.TURN_SPEED) * dt
 
         # Applies friction to the car's velocity.
         # Friction is already a multiplicative decay, so it needs to be normalised.
         self.velocity *= CAR.FRICTION ** (dt * 60)
 
         # Changes the car's position based on direction and velocity.
-        self._direction = Vector2(np.cos(self._angle), np.sin(self._angle))
+        self._direction = Vector2(np.cos(self.angle), np.sin(self.angle))
         self.position += self._direction * self.velocity * dt
 
         # Updates the car rect.
@@ -147,27 +140,6 @@ class Car:
         min_y, max_y = min(ys), max(ys)
 
         self.rect = pygame.Rect(min_x, min_y, max_x - min_x, max_y - min_y)
-
-    def update_sensors(self, track: Track) -> None:
-
-        """
-        Updates all sensor distances using the track's collision mask.
-
-        Parameters
-        ----------
-        track : Track
-            The track to raycast against.
-        """
-
-        for i, angle_offset in enumerate(self._sensor_angles_rad):
-
-            # Calculates the sensor's direction.
-            sensor_angle: float = self._angle + angle_offset
-            direction: Vector2 = Vector2(np.cos(sensor_angle), np.sin(sensor_angle))
-
-            # Casts a ray.
-            distance: float = track.raycast(self.position, direction, CAR.SENSOR_RANGE)
-            self.sensor_distances[i] = distance / CAR.SENSOR_RANGE
 
     def check_track_collision(self, track: Track) -> bool:
 
@@ -323,35 +295,6 @@ class Car:
         pygame.draw.polygon(screen, colour, self.get_transformed_points('triangle'), width=2)
         pygame.draw.line(screen, colour, *self.get_transformed_points('line'), width=2)
 
-        if self._show_sensors:
-            self._draw_sensors(screen)
-
-    def _draw_sensors(self, screen: Surface) -> None:
-
-        """
-        Draws the car's sensors for debug purposes.
-
-        Parameters
-        ----------
-        screen : Surface
-            The screen to draw on.
-        """
-
-        for i, angle_offset in enumerate(self._sensor_angles_rad):
-
-            sensor_angle: float = self._angle + angle_offset
-            direction: Vector2 = Vector2(np.cos(sensor_angle), np.sin(sensor_angle))
-            distance: float = self.sensor_distances[i] * CAR.SENSOR_RANGE
-            end_point: Vector2 = self.position + direction * distance
-
-            pygame.draw.line(
-                screen,
-                Color('#9ee88b'),
-                (self.position.x, self.position.y),
-                (end_point.x, end_point.y),
-                1
-            )
-
     def get_transformed_points(self, part: str) -> list[Vector2]:
 
         """
@@ -376,7 +319,7 @@ class Car:
         """
 
         return [
-            self.position + Vector2(x * CAR.SIZE, y * CAR.SIZE).rotate_rad(self._angle)
+            self.position + Vector2(x * CAR.SIZE, y * CAR.SIZE).rotate_rad(self.angle)
             for x, y in CAR.SHAPE[part]
         ]
 
@@ -391,16 +334,6 @@ class Car:
         Events.on_keypress_turn.add_listener(self._turn)
 
         Events.on_car_collided.add_listener(self._handle_collision)
-
-        Events.on_keypress_sensors.add_listener(self._toggle_sensors)
-
-    def _toggle_sensors(self) -> None:
-
-        """
-        Toggles the visualisation of sensors.
-        """
-
-        self._show_sensors = not self._show_sensors
 
     def _accelerate(self, data: Car) -> None:
 
@@ -464,5 +397,3 @@ class Car:
         Events.on_keypress_turn.remove_listener(self._turn)
 
         Events.on_car_collided.remove_listener(self._handle_collision)
-
-        Events.on_keypress_sensors.remove_listener(self._toggle_sensors)

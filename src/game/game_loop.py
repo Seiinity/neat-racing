@@ -153,16 +153,13 @@ class GameLoop:
             Time since the last frame, in seconds.
         """
 
-        # Updates player sensors.
-        self._player_car.update_sensors(self._track)
-
         # Updates AI sensors and decisions.
         for controller in self._ai_controllers:
 
             if not controller.is_alive:
                 continue
 
-            controller.car.update_sensors(self._track)
+            controller.update_sensors(self._track)
             controller.make_decision(dt)
 
     def _fixed_update(self, dt: float) -> None:

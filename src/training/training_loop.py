@@ -6,7 +6,7 @@ from pathlib import Path
 from queue import Empty
 from pygame import Vector2, Surface
 from pygame.time import Clock
-from config import COLOURS, FONTS, TRAINING, CAR, GAME
+from config import COLOURS, FONTS, TRAINING, GAME, CONTROLLER
 from src.algorithm import GeneticAlgorithm, Genome
 from src.io import GenomeIO
 from src.core.car import Car, Track
@@ -37,7 +37,7 @@ class TrainingLoop:
         # Initialises the genetic algorithm.
         self.genetic_algorithm: GeneticAlgorithm = GeneticAlgorithm(
             population_size=TRAINING.POPULATION_SIZE,
-            input_size=len(CAR.SENSORS),
+            input_size=len(CONTROLLER.SENSORS),
             output_size=4
         )
 
@@ -425,7 +425,7 @@ class TrainingLoop:
                 continue
 
             if run_ai:
-                controller.car.update_sensors(self._track)
+                controller.update_sensors(self._track)
                 controller.make_decision(dt * TRAINING.INTERVAL)
 
             controller.fixed_update()
