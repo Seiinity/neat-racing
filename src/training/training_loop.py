@@ -13,6 +13,7 @@ from src.core.car import Car, Track
 from src.core.utils import draw_outlined_text
 from src.ui import Button, plotting_process
 from .ai_controller import AIController
+from ..core import Events
 
 
 class TrainingLoop:
@@ -123,6 +124,9 @@ class TrainingLoop:
             'fitness_std': [],
             'death_positions': []
         }
+
+        # Force renders the checkpoints.
+        Events.on_keypress_checkpoints.broadcast()
 
         self._print_startup()
         self._create_generation()
