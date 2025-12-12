@@ -1,5 +1,3 @@
-import pygame
-
 from pygame import Color, Surface, Rect
 from pygame.font import Font
 from pytmx import TiledElement, TiledMap
