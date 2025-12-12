@@ -133,6 +133,11 @@ These are some examples:
 - `SENSOR_RANGE`: Maximum sensor detection distance;
 - `ACCELERATION`, `BRAKE_STRENGTH`, `TURN_SPEED`: Car physics.
 
+## Included Genomes
+
+The repository includes the top 10 genomes from generations 50, 100, 300, and 1100.<br/>
+They were trained with the default config values.
+
 ## License
 
 MIT License - feel free to use, modify, and distribute.
