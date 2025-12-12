@@ -6,17 +6,17 @@ LLMs were used sparingly in this project, and never for critical code sections.<
 *Important: em dashes and en dashes were used in the project report. They are used correctly as it is adding relevant and related information. It is not a result of AI-generated text.*<br/>
 
 The code was written mostly via experience and research on various websites and papers, including:
-- [Stanley & Miikkulainen (2002) - Evolving Neural Networks Through Augmenting Topologies](https://nn.cs.utexas.edu/downloads/papers/stanley.ec02.pdf)
-- [Gershenson (2003) - Artificial Neural Networks for Beginners](http://arxiv.org/abs/cs/0308031)
-- [EBSCO Research Starters - Genetic Algorithm (GA)](https://www.ebsco.com/research-starters/computer-science/genetic-algorithm-ga)
-- [Cardamone et al. (2009) - Evolving Competitive Car Controllers for Racing Games with Neuroevolution](https://doi.org/10.1145/1569901.1570060)
-- [ML Cheatsheet](https://ml-cheatsheet.readthedocs.io/en/latest/)
+- [Stanley & Miikkulainen (2002) - Evolving Neural Networks Through Augmenting Topologies](https://nn.cs.utexas.edu/downloads/papers/stanley.ec02.pdf);
+- [Gershenson (2003) - Artificial Neural Networks for Beginners](http://arxiv.org/abs/cs/0308031);
+- [EBSCO Research Starters - Genetic Algorithm (GA)](https://www.ebsco.com/research-starters/computer-science/genetic-algorithm-ga);
+- [Cardamone et al. (2009) - Evolving Competitive Car Controllers for Racing Games with Neuroevolution](https://doi.org/10.1145/1569901.1570060);
+- [ML Cheatsheet](https://ml-cheatsheet.readthedocs.io/en/latest/);
 - The official [Python documentation](https://docs.python.org/3/);
-- The official [Pygame documentation](https://www.pygame.org/docs/)
-- The official [Matplotlib documentation](https://matplotlib.org/stable/index.html)
-- The official [Seaborn documentation](https://seaborn.pydata.org/)
-- Various [Stack Overflow](https://stackoverflow.com/questions) posts.
-- Various [Google Developers Machine Learning](https://developers.google.com/machine-learning) articles.
+- The official [Pygame documentation](https://www.pygame.org/docs/);
+- The official [Matplotlib documentation](https://matplotlib.org/stable/index.html);
+- The official [Seaborn documentation](https://seaborn.pydata.org/);
+- Various [Stack Overflow](https://stackoverflow.com/questions) posts;
+- Various [Google Developers Machine Learning](https://developers.google.com/machine-learning) articles;
 - Various [Medium](https://medium.com/) articles.
 
 The [Claude](https://claude.ai/) LLM was used:
