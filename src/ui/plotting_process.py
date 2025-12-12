@@ -269,7 +269,6 @@ def _draw_empty_message(ax: Axes, message: str) -> None:
     ax.clear()
     ax.set_xticks([])
     ax.set_yticks([])
-    ax.set_title("")
     ax.text(
         0.5, 0.5, message,
         ha="center", va="center", fontsize=12, color="white",

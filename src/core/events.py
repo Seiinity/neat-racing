@@ -22,9 +22,4 @@ class Events:
     on_keypress_sensors: Event = Event()
 
     # Game events.
-    on_car_moved: Event = Event()
     on_car_collided: Event = Event()
-    on_car_die: Event = Event()
-    on_checkpoint_hit: Event = Event()
-    on_finish_line_crossed: Event = Event()
-    on_lap_completed: Event = Event()

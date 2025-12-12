@@ -4,12 +4,13 @@ import pygame
 
 from pygame import Surface, Vector2
 from pygame.time import Clock
-from config import GAME, COLOURS
+from config import GAME, COLOURS, FONTS
 from src.algorithm import Genome
 from src.training import AIController
 from src.io import GenomeIO
 from src.core import Car, Events, Track
 from src.core.utils import draw_outlined_text
+from src.ui import Button
 from .input_handler import InputHandler
 
 
@@ -60,6 +61,15 @@ class GameLoop:
         # Loads AI opponents from genome files.
         self._ai_controllers: list[AIController] = []
         self._load_ai_opponents(genome_paths)
+
+        # Creates the quit button.
+        self._stop_button: Button = Button(
+            x=GAME.SCREEN_WIDTH - 90,
+            y=10,
+            width=80,
+            height=40,
+            text="Quit"
+        )
 
     def _load_ai_opponents(self, genome_paths: list[str]) -> None:
 
@@ -140,6 +150,10 @@ class GameLoop:
                     self._running = False
                     return None
 
+            elif self._stop_button.handle_event(event):
+                self._running = False
+                return None
+
         return None
 
     def _update(self, dt: float) -> None:
@@ -207,15 +221,11 @@ class GameLoop:
 
         # Checks for checkpoint crossing.
         if checkpoint_order >= 0:
-            Events.on_checkpoint_hit.broadcast(
-                data=(self._player_car, checkpoint_order, self._num_checkpoints)
-            )
+            self._player_car.handle_checkpoint_hit(checkpoint_order)
 
         # Checks for finish line crossing.
         if self._player_car.rect.colliderect(self._track.finish_line):
-            Events.on_finish_line_crossed.broadcast(
-                data=(self._player_car, self._num_checkpoints)
-            )
+            self._player_car.handle_finish_line(self._num_checkpoints)
 
     def _handle_ai_collisions(self, controller: AIController) -> None:
 
@@ -260,5 +270,13 @@ class GameLoop:
         # Draws the AI cars.
         for controller in self._ai_controllers:
             controller.draw(self._screen)
+
+        # Draws the quit button.
+        self._stop_button.draw(self._screen)
+
+        draw_outlined_text(
+            self._screen, f"Laps: {self._player_car.laps_completed}",
+            (20, 20), align="left", font_size=FONTS.SIZE_NORMAL
+        )
 
         pygame.display.flip()
