@@ -182,17 +182,17 @@ def plotting_process(queue: mp.Queue):
             track_height, track_width = track_img.shape[:2]
 
             # Use 'auto' aspect when zoomed to allow proper scaling.
-            aspect = 'auto' if is_heatmap_zoomed else 'equal'
+            aspect: str = 'auto' if is_heatmap_zoomed else 'equal'
             heatmap_ax.imshow(track_img, extent=[0, track_width, track_height, 0], aspect=aspect)
 
             if 'death_positions' in data and len(data['death_positions']) > 1:
 
-                death_x = [pos[0] for pos in data['death_positions']]
-                death_y = [pos[1] for pos in data['death_positions']]
+                death_x: list[float] = [pos[0] for pos in data['death_positions']]
+                death_y: list[float] = [pos[1] for pos in data['death_positions']]
 
-                bin_size = 20
-                bins_x = int(track_width / bin_size)
-                bins_y = int(track_height / bin_size)
+                bin_size: int = 20
+                bins_x: int = int(track_width / bin_size)
+                bins_y: int = int(track_height / bin_size)
 
                 _, _, _, mesh = heatmap_ax.hist2d(
                     death_x, death_y,
@@ -202,7 +202,7 @@ def plotting_process(queue: mp.Queue):
                     range=[[0, track_width], [0, track_height]]
                 )
 
-                # Only show colorbar if not zoomed into a different plot.
+                # Only shows the colour bar if not zoomed into a different plot.
                 if zoomed_ax is None or is_heatmap_zoomed:
                     heatmap_cbar = fig.colorbar(mesh, ax=heatmap_ax)
                     heatmap_cbar.set_label('Deaths')

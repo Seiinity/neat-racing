@@ -11,6 +11,11 @@ class MainMenu:
 
     """
     Main menu screen with clickable options.
+
+    Methods
+    -------
+    run() -> None
+        Runs the main menu loop.
     """
 
     def __init__(self) -> None:

@@ -14,26 +14,20 @@ class TrackSelector:
     """
     Track selection screen for choosing a racing track.
 
-    Attributes
-    ----------
-    screen : Surface
-        The Pygame display surface.
-    clock : Clock
-        The Pygame clock for timing.
-    running : bool
-        Whether the selector is currently running.
-    selected_track : str | None
-        The selected track file path, or None if not yet selected.
+    Methods
+    -------
+    run() -> None
+        Runs the track selector loop.
     """
 
     def __init__(self, tracks_directory: str = './data/tracks/raw') -> None:
 
         pygame.init()
 
-        self.screen: Surface = pygame.display.set_mode((GAME.SCREEN_WIDTH, GAME.SCREEN_HEIGHT))
-        self.clock: Clock = Clock()
-        self.running: bool = True
-        self.selected_track: str | None = None
+        self._screen: Surface = pygame.display.set_mode((GAME.SCREEN_WIDTH, GAME.SCREEN_HEIGHT))
+        self._clock: Clock = Clock()
+        self._running: bool = True
+        self._selected_track: str | None = None
         self._track_items: list[ListItem] = []
 
         pygame.display.set_caption("NEAT-ish Racing - Select Track")
@@ -52,7 +46,7 @@ class TrackSelector:
         self._item_height: int = 40
         self._list_start_y: int = 180
 
-        # Creates the control buttons.
+        # Creates the start button.
         self._start_button: Button = Button(
             x=GAME.SCREEN_WIDTH // 2 - 75,
             y=620,
@@ -62,6 +56,7 @@ class TrackSelector:
             disabled=True
         )
 
+        # Creates the back button.
         self._back_button: Button = Button(
             x=100,
             y=620,
@@ -84,7 +79,7 @@ class TrackSelector:
         if not self._tracks_directory.exists():
             return []
 
-        track_files = list(self._tracks_directory.glob('*.tmx'))
+        track_files: list[Path] = list(self._tracks_directory.glob('*.tmx'))
         track_files.sort(key=lambda p: p.name)
 
         return [str(path) for path in track_files]
@@ -100,15 +95,15 @@ class TrackSelector:
             The selected track path, or None if cancelled.
         """
 
-        while self.running:
+        while self._running:
 
-            result = self._process_events()
+            result: str | None = self._process_events()
 
             if result is not None:
                 return result
 
             self._draw()
-            self.clock.tick(GAME.FPS)
+            self._clock.tick(GAME.FPS)
 
         return None
 
@@ -136,28 +131,28 @@ class TrackSelector:
 
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
-                    self.running = False
+                    self._running = False
 
             elif event.type == pygame.MOUSEWHEEL:
                 self._handle_scroll(event.y)
 
-            # Handles button clicks.
             if self._back_button.handle_event(event):
-                self.running = False
+                self._running = False
 
             if self._start_button.handle_event(event):
-                if self.selected_track is not None:
-                    return self.selected_track
+                if self._selected_track is not None:
+                    return self._selected_track
 
             # Handles list items events.
             for item in self._track_items:
+
                 if item.handle_event(event):
 
-                    self.selected_track = item.data
+                    self._selected_track = item.data
 
                     # Updates selection state for all items.
                     for it in self._track_items:
-                        it.is_selected = (it.data == self.selected_track)
+                        it.is_selected = (it.data == self._selected_track)
 
                     break
 
@@ -174,7 +169,7 @@ class TrackSelector:
             The scroll direction (positive for up, negative for down).
         """
 
-        max_scroll = max(0, len(self._available_tracks) - self._max_visible_items)
+        max_scroll: int = max(0, len(self._available_tracks) - self._max_visible_items)
         self._scroll_offset = max(0, min(max_scroll, self._scroll_offset - direction))
 
     def _draw(self) -> None:
@@ -184,25 +179,25 @@ class TrackSelector:
         """
 
         # Background.
-        self.screen.fill(COLOURS.BACKGROUND)
+        self._screen.fill(COLOURS.BACKGROUND)
 
         # Title.
         draw_outlined_text(
-            self.screen,
+            self._screen,
             "Select Track",
             (GAME.SCREEN_WIDTH // 2, 80),
             font_size=FONTS.SIZE_LARGE
         )
 
         # Selected track display.
-        if self.selected_track:
-            track_name = Path(self.selected_track).stem
+        if self._selected_track:
+            track_name = Path(self._selected_track).stem
             display_text = f"Selected: {track_name}"
         else:
             display_text = "No track selected"
 
         draw_outlined_text(
-            self.screen,
+            self._screen,
             display_text,
             (GAME.SCREEN_WIDTH // 2, 110),
             font_size=FONTS.SIZE_NORMAL,
@@ -216,15 +211,15 @@ class TrackSelector:
         self._draw_scroll_indicators()
 
         # Draws buttons.
-        self._back_button.draw(self.screen)
+        self._back_button.draw(self._screen)
 
         # Only enables the start button if a track is selected.
-        self._start_button.disabled = not self.selected_track
-        self._start_button.draw(self.screen)
+        self._start_button.disabled = not self._selected_track
+        self._start_button.draw(self._screen)
 
         # Instructions.
         draw_outlined_text(
-            self.screen,
+            self._screen,
             "Click to select a track. Scroll to see more.",
             (GAME.SCREEN_WIDTH // 2, 580),
             font_size=FONTS.SIZE_NORMAL,
@@ -241,20 +236,20 @@ class TrackSelector:
 
         # Hides items if overflowing.
         self._track_items.clear()
-        visible_start = self._scroll_offset
-        visible_end = min(visible_start + self._max_visible_items, len(self._available_tracks))
+        visible_start: int = self._scroll_offset
+        visible_end: int = min(visible_start + self._max_visible_items, len(self._available_tracks))
 
-        item_width = 600
-        item_position = GAME.SCREEN_WIDTH // 2 - item_width // 2
+        item_width: int = 600
+        item_position: int = GAME.SCREEN_WIDTH // 2 - item_width // 2
 
         # Creates a ListItem for each item of the list.
         for i, track_index in enumerate(range(visible_start, visible_end)):
 
-            track_path = self._available_tracks[track_index]
-            track_name = Path(track_path).stem
-            y = self._list_start_y + (i * self._item_height)
+            track_path: str = self._available_tracks[track_index]
+            track_name: str = Path(track_path).stem
+            y: int = self._list_start_y + (i * self._item_height)
 
-            item = ListItem(
+            item: ListItem = ListItem(
                 item_position,
                 y,
                 item_width,
@@ -263,7 +258,7 @@ class TrackSelector:
                 data=track_path
             )
 
-            item.is_selected = (track_path == self.selected_track)
+            item.is_selected = (track_path == self._selected_track)
             self._track_items.append(item)
 
     def _draw_track_list(self) -> None:
@@ -275,7 +270,7 @@ class TrackSelector:
         if not self._available_tracks:
 
             draw_outlined_text(
-                self.screen,
+                self._screen,
                 "No tracks found in game/tracks/raw folder.",
                 (GAME.SCREEN_WIDTH // 2, 300),
                 font_size=FONTS.SIZE_NORMAL,
@@ -285,7 +280,7 @@ class TrackSelector:
 
         # Draws all items.
         for item in self._track_items:
-            item.draw(self.screen)
+            item.draw(self._screen)
 
     def _draw_scroll_indicators(self) -> None:
 
@@ -301,7 +296,7 @@ class TrackSelector:
         # Up arrow.
         if self._scroll_offset > 0:
             draw_outlined_text(
-                self.screen,
+                self._screen,
                 "▲",
                 (GAME.SCREEN_WIDTH // 2, self._list_start_y - 20),
                 font_size=FONTS.SIZE_NORMAL,
@@ -309,12 +304,12 @@ class TrackSelector:
             )
 
         # Down arrow.
-        max_scroll = len(self._available_tracks) - self._max_visible_items
-
+        max_scroll: int = len(self._available_tracks) - self._max_visible_items
         if self._scroll_offset < max_scroll:
+
             bottom_y = self._list_start_y + (self._max_visible_items * self._item_height) + 5
             draw_outlined_text(
-                self.screen,
+                self._screen,
                 "▼",
                 (GAME.SCREEN_WIDTH // 2, bottom_y + 10),
                 font_size=FONTS.SIZE_NORMAL,
