@@ -57,6 +57,7 @@ def plotting_process(queue: mp.Queue):
             for ax in axes.flat:
                 ax.set_visible(True)
                 ax.set_position(original_positions[ax])
+
             zoomed_ax = None
             fig.canvas.draw_idle()
             return None
@@ -124,9 +125,9 @@ def plotting_process(queue: mp.Queue):
                     ax.set_position((0.1, 0.1, 0.8, 0.8))
 
         # Fitness over time.
-        axes[0, 0].plot(generations, best_fitness, label='Best', color='green')
-        axes[0, 0].plot(generations, avg_fitness, label='Avg', color='blue')
-        axes[0, 0].plot(generations, worst_fitness, label='Worst', color='red')
+        sns.lineplot(x=generations, y=best_fitness, label='Best', color='mediumseagreen', ax=axes[0, 0])
+        sns.lineplot(x=generations, y=avg_fitness, label='Average', color='deepskyblue', ax=axes[0, 0])
+        sns.lineplot(x=generations, y=worst_fitness, label='Worst', color='tomato', ax=axes[0, 0])
         axes[0, 0].set_title("Fitness Over Generations")
         axes[0, 0].set_xlabel("Generation")
         axes[0, 0].set_ylabel("Fitness")
@@ -136,7 +137,7 @@ def plotting_process(queue: mp.Queue):
         # Fitness distribution (current generation).
         if 'fitness_distribution' in data:
 
-            sns.histplot(data['fitness_distribution'], ax=axes[0, 1], kde=True)
+            sns.histplot(data['fitness_distribution'], ax=axes[0, 1], kde=True, color='mediumpurple')
             axes[0, 1].set_title(f"Fitness Distribution (Gen {current_gen})")
             axes[0, 1].set_xlabel("Fitness")
             axes[0, 1].set_ylabel("Count")
@@ -144,31 +145,44 @@ def plotting_process(queue: mp.Queue):
         # Checkpoints reached (current generation, lap 0 only).
         if 'checkpoints' in data and 'laps' in data:
 
-            filtered_checkpoints = [
-                cp for cp, lap in zip(data['checkpoints'], data['laps']) if lap == 0
-            ]
+            filtered = [cp for cp, lap in zip(data['checkpoints'], data['laps']) if lap == 0]
 
-            if filtered_checkpoints:
-                sns.histplot(filtered_checkpoints, ax=axes[0, 2], discrete=True)
+            # If everyone has 0 checkpoints, shows a blank message.
+            if len(filtered) == 0 or all(cp == 0 for cp in filtered):
+
+                _draw_empty_message(axes[0, 2], "No car has crossed a checkpoint.")
+
+            else:
+
+                sns.histplot(filtered, ax=axes[0, 2], discrete=True, color='darkorange')
+                axes[0, 2].set_xlabel("Checkpoint")
+                axes[0, 2].set_ylabel("Count")
+                axes[0, 2].xaxis.set_major_locator(plt.MaxNLocator(integer=True))
 
             axes[0, 2].set_title(f"Checkpoints Reached (Gen {current_gen}, Lap 0)")
-            axes[0, 2].set_xlabel("Checkpoint")
-            axes[0, 2].set_ylabel("Count")
-            axes[0, 2].xaxis.set_major_locator(plt.MaxNLocator(integer=True))
 
         # Laps completed (current generation).
         if 'laps' in data:
+            laps = data['laps']
 
-            sns.histplot(data['laps'], ax=axes[1, 0], discrete=True)
+            # If everyone has 0 laps, shows a blank message.
+            if len(laps) == 0 or all(lp == 0 for lp in laps):
+
+                _draw_empty_message(axes[1, 0], "No car has completed a lap.")
+
+            else:
+
+                sns.histplot(laps, ax=axes[1, 0], discrete=True, color='teal')
+                axes[1, 0].set_xlabel("Laps")
+                axes[1, 0].set_ylabel("Count")
+                axes[1, 0].xaxis.set_major_locator(plt.MaxNLocator(integer=True))
+
             axes[1, 0].set_title(f"Laps Completed (Gen {current_gen})")
-            axes[1, 0].set_xlabel("Laps")
-            axes[1, 0].set_ylabel("Count")
-            axes[1, 0].xaxis.set_major_locator(plt.MaxNLocator(integer=True))
 
         # Survival times (current generation).
         if 'survival_times' in data:
 
-            sns.histplot(data['survival_times'], ax=axes[1, 1], kde=True)
+            sns.histplot(data['survival_times'], ax=axes[1, 1], kde=True, color='coral')
             axes[1, 1].set_title(f"Survival Times (Gen {current_gen})")
             axes[1, 1].set_xlabel("Time (s)")
             axes[1, 1].set_ylabel("Count")
@@ -237,3 +251,27 @@ def plotting_process(queue: mp.Queue):
 
         fig.canvas.draw_idle()
         fig.canvas.flush_events()
+
+
+def _draw_empty_message(ax: Axes, message: str) -> None:
+
+    """
+    Draws a message when there is no relevant data.
+
+    Parameters
+    ----------
+    ax : Axes
+        The axes on which to draw the message.
+    message : str
+        The message to draw.
+    """
+
+    ax.clear()
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.set_title("")
+    ax.text(
+        0.5, 0.5, message,
+        ha="center", va="center", fontsize=12, color="white",
+        transform=ax.transAxes
+    )
