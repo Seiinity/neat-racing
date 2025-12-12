@@ -117,7 +117,7 @@ class GenomeIO:
         best_genomes: list[Genome] = genetic_algorithm.get_top(num_best)
 
         for i, genome in enumerate(best_genomes, 1):
-            filepath: str = f"{directory}/genome_gen{genetic_algorithm.generation}_rank{i}.pkl"
+            filepath: str = f"{directory}/genome_gen{genetic_algorithm.generation - 1}_rank{i}.pkl"
             GenomeIO.save_genome(genome, filepath)
 
         print(f"Saved top {num_best} genomes to {directory}")
